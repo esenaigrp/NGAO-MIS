@@ -1,0 +1,52 @@
+# =========================
+# Environment & Secrets
+# =========================
+.env
+venv/
+
+# =========================
+# Python / Django
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+backend/venv/
+backend/__pycache__/
+
+# =========================
+# Frontend (React)
+# =========================
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# =========================
+# Mobile App (Flutter)
+# =========================
+Mobile_App/.dart_tool/
+Mobile_App/build/
+Mobile_App/.flutter-plugins
+Mobile_App/.flutter-plugins-dependencies
+Mobile_App/.pub-cache/
+Mobile_App/.pub/
+Mobile_App/ios/Pods/
+Mobile_App/ios/Runner.xcworkspace/
+Mobile_App/ios/Flutter/Flutter.framework
+Mobile_App/ios/Flutter/Flutter.podspec
+Mobile_App/*.log
+
+# =========================
+# Database & Data
+# =========================
+database/
+Kenya.GeoJson
+
+# =========================
+# IDE / OS / Logs
+# =========================
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.iml

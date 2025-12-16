@@ -1,0 +1,17 @@
+{
+"editor.formatOnSave": true,
+"editor.codeActionsOnSave": {
+"source.fixAll": true,
+"source.organizeImports": true
+},
+
+
+"python.formatting.provider": "black",
+"python.linting.enabled": true,
+"python.linting.mypyEnabled": true,
+"python.linting.ruffEnabled": true,
+
+
+"eslint.validate": ["javascript", "typescript", "typescriptreact", "javascriptreact"],
+"prettier.enable": true
+}

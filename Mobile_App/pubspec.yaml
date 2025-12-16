@@ -1,0 +1,15 @@
+name: NGAO_MIS
+desctription: NGAO MIS mobile app
+version: 1.0.0+1
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.1.2                    # HTTP client with interceptors
+  flutter_secure_storage: ^9.0.0 # secure token storage
+  provider: ^6.0.5               # state management
+  http: ^0.13.6
+  flutter_dotenv: ^5.0.2         # env vars (API base)
+  intl: ^0.18.1                  # date/intl if needed
+  flutter_spinkit: ^5.1.0     # optional for spinners

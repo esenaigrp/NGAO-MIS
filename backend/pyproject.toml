@@ -1,0 +1,29 @@
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+
+[tool.ruff]
+select = ["E", "F", "W", "I"]
+ignore = []
+line-length = 88
+exclude = ["migrations", "venv"]
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_unused_configs = true
+strict_optional = true
+
+
+[tool.djlint]
+profile = "django"
+indent = 4

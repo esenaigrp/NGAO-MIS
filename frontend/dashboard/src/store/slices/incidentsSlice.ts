@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "../../api/axiosClient";
 
+/* ============================
+   TYPES
+============================ */
 export type Incident = {
   id: number;
   title: string;
@@ -31,27 +34,50 @@ const initialState: IncidentsState = {
 };
 
 /* ============================
-   FETCH
+   FETCH (ADMIN / ALL INCIDENTS)
 ============================ */
-export const fetchIncidents = createAsyncThunk(
-  "incidents/fetch",
-  async (
-    { page = 1, pageSize = 10, q = "" }: { page?: number; pageSize?: number; q?: string },
-    thunkAPI
-  ) => {
-    try {
-      const res = await api.get(
-        `/incidents/?page=${page}&page_size=${pageSize}&q=${encodeURIComponent(q)}`
-      );
+export const fetchIncidents = createAsyncThunk<
+  {
+    items: Incident[];
+    total: number;
+    page: number;
+    pageSize: number;
+  },
+  {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+  }
+>("incidents/fetchAll", async ({ page = 1, pageSize = 10, q = "" }, { rejectWithValue }) => {
+  try {
+    const res = await api.get("/incidents/", {
+      params: { page, page_size: pageSize, q },
+    });
 
-      return {
-        items: res.data.results ?? res.data,
-        total: res.data.count ?? res.data.length,
-        page,
-        pageSize,
-      };
+    const isPaginated = Array.isArray(res.data.results);
+
+    return {
+      items: isPaginated ? res.data.results : res.data,
+      total: isPaginated ? res.data.count : res.data.length,
+      page,
+      pageSize,
+    };
+  } catch (err: any) {
+    return rejectWithValue("Failed to load incidents");
+  }
+});
+
+/* ============================
+   FETCH (OFFICER / MY INCIDENTS)
+============================ */
+export const fetchMyIncidents = createAsyncThunk<Incident[]>(
+  "incidents/fetchMine",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/incidents/my/");
+      return res.data;
     } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to load incidents");
+      return rejectWithValue("Failed to load assigned incidents");
     }
   }
 );
@@ -61,94 +87,46 @@ export const fetchIncidents = createAsyncThunk(
 ============================ */
 export const createIncident = createAsyncThunk(
   "incidents/create",
-  async (payload: Partial<Incident>, thunkAPI) => {
+  async (payload: Partial<Incident>, { rejectWithValue }) => {
     try {
       const res = await api.post("/incidents/", payload);
       return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to create incident");
+    } catch {
+      return rejectWithValue("Failed to create incident");
     }
   }
 );
 
 /* ============================
-   UPDATE
+   UPDATE / DELETE / ACTIONS
 ============================ */
 export const updateIncident = createAsyncThunk(
   "incidents/update",
-  async ({ id, payload }: { id: number; payload: Partial<Incident> }, thunkAPI) => {
+  async ({ id, payload }: { id: number; payload: Partial<Incident> }, { rejectWithValue }) => {
     try {
       const res = await api.patch(`/incidents/${id}/`, payload);
       return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to update incident");
+    } catch {
+      return rejectWithValue("Failed to update incident");
+    }
+  }
+);
+
+export const deleteIncident = createAsyncThunk(
+  "incidents/delete",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await api.delete(`/incidents/${id}/`);
+      return id;
+    } catch {
+      return rejectWithValue("Failed to delete incident");
     }
   }
 );
 
 /* ============================
-   DELETE
+   SLICE
 ============================ */
-export const deleteIncident = createAsyncThunk(
-  "incidents/delete",
-  async (id: number, thunkAPI) => {
-    try {
-      await api.delete(`/incidents/${id}/`);
-      return id;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to delete incident");
-    }
-  }
-);
-
-export const assignIncident = createAsyncThunk(
-  "incidents/assign",
-  async ({ id, officer_id }: { id: number; officer_id: string }, thunkAPI) => {
-    try {
-      const res = await api.patch(`/incidents/${id}/assign/`, { officer_id });
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue("Failed to assign incident");
-    }
-  }
-);
-
-export const startInvestigation = createAsyncThunk(
-  "incidents/startInvestigation",
-  async (id: number, thunkAPI) => {
-    try {
-      const res = await api.patch(`/incidents/${id}/start-investigation/`);
-      return res.data;
-    } catch {
-      return thunkAPI.rejectWithValue("Failed to start investigation");
-    }
-  }
-);
-
-export const resolveIncident = createAsyncThunk(
-  "incidents/resolve",
-  async (id: number, thunkAPI) => {
-    try {
-      const res = await api.patch(`/incidents/${id}/resolve/`);
-      return res.data;
-    } catch {
-      return thunkAPI.rejectWithValue("Failed to resolve incident");
-    }
-  }
-);
-
-export const closeIncident = createAsyncThunk(
-  "incidents/close",
-  async (id: number, thunkAPI) => {
-    try {
-      const res = await api.patch(`/incidents/${id}/close/`);
-      return res.data;
-    } catch {
-      return thunkAPI.rejectWithValue("Failed to close incident");
-    }
-  }
-);
-
 const incidentsSlice = createSlice({
   name: "incidents",
   initialState,
@@ -165,8 +143,7 @@ const incidentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
-      // FETCH
+      // ADMIN FETCH
       .addCase(fetchIncidents.pending, (s) => {
         s.loading = true;
         s.error = null;
@@ -183,18 +160,24 @@ const incidentsSlice = createSlice({
         s.error = String(a.payload);
       })
 
-      // CREATE
-      .addCase(createIncident.pending, (s) => {
+      // OFFICER FETCH
+      .addCase(fetchMyIncidents.pending, (s) => {
         s.loading = true;
       })
-      .addCase(createIncident.fulfilled, (s, a) => {
+      .addCase(fetchMyIncidents.fulfilled, (s, a) => {
         s.loading = false;
-        s.list.unshift(a.payload);
-        s.total += 1;
+        s.list = a.payload;
+        s.total = a.payload.length;
       })
-      .addCase(createIncident.rejected, (s, a) => {
+      .addCase(fetchMyIncidents.rejected, (s, a) => {
         s.loading = false;
         s.error = String(a.payload);
+      })
+
+      // CREATE
+      .addCase(createIncident.fulfilled, (s, a) => {
+        s.list.unshift(a.payload);
+        s.total += 1;
       })
 
       // UPDATE
@@ -205,13 +188,8 @@ const incidentsSlice = createSlice({
       // DELETE
       .addCase(deleteIncident.fulfilled, (s, a) => {
         s.list = s.list.filter(i => i.id !== a.payload);
-        s.total = Math.max(0, s.total - 1);
-      })
-
-      .addCase(assignIncident.fulfilled, (s, a) => {
-        s.list = s.list.map(i => (i.id === a.payload.id ? a.payload : i));
-      })
-
+        s.total -= 1;
+      });
   },
 });
 

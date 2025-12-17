@@ -27,5 +27,5 @@ export default function ProtectedRoute({ roles }: Props) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  return <Outlet />; // <-- allows nested routes to render
+  return <Outlet />;
 }

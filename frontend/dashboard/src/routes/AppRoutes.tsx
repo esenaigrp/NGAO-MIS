@@ -1,3 +1,4 @@
+// src/routes/AppRoutes.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -14,10 +15,10 @@ import { DeviceApprovalList } from "../features/users/DeviceApprovalList";
 
 const AppRoutes = () => (
   <Routes>
-    {/* Public route */}
+    {/* Public routes */}
     <Route path="/login" element={<LoginPage />} />
 
-    {/* Protected routes */}
+    {/* Protected dashboard routes */}
     <Route element={<ProtectedRoute />}>
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardHome />} />
@@ -26,11 +27,11 @@ const AppRoutes = () => (
         <Route path="/dashboard/births" element={<BirthRegistrationList />} />
         <Route path="/dashboard/deaths" element={<DeathRegistrationList />} />
         <Route path="/dashboard/marriages" element={<MarriageRegistrationList />} />
-        <Route path="/devices" element={<DeviceApprovalList />} />
+        <Route path="/dashboard/devices" element={<DeviceApprovalList />} />
       </Route>
     </Route>
 
-    {/* Catch-all */}
+    {/* Fallback */}
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes>
 );

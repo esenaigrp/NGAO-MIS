@@ -1,24 +1,69 @@
-// src/features/dashboard/OfficerDashboard.tsx
-import React, { useEffect } from "react";
-import { FaExclamationTriangle, FaClock, FaCheckCircle } from "react-icons/fa";
+import React, { useEffect, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { fetchMyIncidents } from "../../store/slices/incidentsSlice";
+import { fetchIncidents } from "../../store/slices/incidentsSlice";
 import StatCard from "../../components/ui/statCard";
+import {
+  FaClock,
+  FaExclamationTriangle,
+  FaCheckCircle,
+} from "react-icons/fa";
 
 const OfficerDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { assigned, stats, status } = useAppSelector(
+
+  const { list, loading, error } = useAppSelector(
     state => state.incidents
   );
 
+  const user = useAppSelector(state => state.auth.user);
+
   useEffect(() => {
-    dispatch(fetchMyIncidents());
+    dispatch(fetchIncidents({}));
   }, [dispatch]);
+
+  /* ============================
+     DERIVED DATA (BUSINESS LOGIC)
+  ============================ */
+
+  const assigned = useMemo(
+    () =>
+      list.filter(
+        i => i.status !== "CLOSED" && i.reported_by === user?.email
+      ),
+    [list, user]
+  );
+
+  const stats = useMemo(() => {
+    const open = assigned.filter(i => i.status === "OPEN").length;
+    const urgent = assigned.filter(i => i.incident_type === "URGENT").length;
+    const resolvedToday = assigned.filter(
+      i =>
+        i.status === "RESOLVED" &&
+        i.timestamp?.startsWith(new Date().toISOString().split("T")[0])
+    ).length;
+
+    return {
+      open,
+      urgent,
+      resolved_today: resolvedToday,
+    };
+  }, [assigned]);
+
+  /* ============================
+     RENDER
+  ============================ */
+
+  if (loading) {
+    return <div className="p-6">Loading incidents...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-600">{error}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 font-ngao">
       <div className="px-6 py-8 mx-auto max-w-7xl">
-        {/* Header */}
         <h1 className="mb-8 text-3xl font-bold text-gray-800">
           My Operational Dashboard
         </h1>
@@ -54,23 +99,16 @@ const OfficerDashboard: React.FC = () => {
           </div>
 
           <div className="p-6">
-            {status === "loading" && (
-              <p className="text-gray-500">Loading incidents...</p>
-            )}
-
-            {assigned.length === 0 && status === "succeeded" && (
+            {assigned.length === 0 ? (
               <p className="text-gray-500">
                 No incidents assigned to you.
               </p>
-            )}
-
-            {assigned.length > 0 && (
+            ) : (
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-left bg-gray-100">
-                    <th className="px-4 py-2">Reference</th>
-                    <th className="px-4 py-2">Category</th>
-                    <th className="px-4 py-2">Priority</th>
+                    <th className="px-4 py-2">Title</th>
+                    <th className="px-4 py-2">Type</th>
                     <th className="px-4 py-2">Status</th>
                   </tr>
                 </thead>
@@ -81,13 +119,10 @@ const OfficerDashboard: React.FC = () => {
                       className="border-t hover:bg-gray-50"
                     >
                       <td className="px-4 py-2 font-medium">
-                        {incident.reference}
+                        {incident.title}
                       </td>
                       <td className="px-4 py-2">
-                        {incident.category}
-                      </td>
-                      <td className="px-4 py-2">
-                        {incident.priority}
+                        {incident.incident_type || "—"}
                       </td>
                       <td className="px-4 py-2">
                         {incident.status}

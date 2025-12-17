@@ -37,6 +37,14 @@ export const registerDevice = createAsyncThunk(
   }
 );
 
+export const fetchPendingDeviceCount = createAsyncThunk(
+  "devices/fetchPendingCount",
+  async () => {
+    const res = await authApi.get("/accounts/devices/pending-count/");
+    return res.data.pending_count;
+  }
+);
+
 export const approveDevice = createAsyncThunk(
   "devices/approve",
   async (device_id: string) => {
@@ -47,7 +55,7 @@ export const approveDevice = createAsyncThunk(
 
 const devicesSlice = createSlice({
   name: "devices",
-  initialState: { status: "idle", message: "", list: [] },
+  initialState: { status: "idle", message: "", list: [], pendingCount: 0, },
   reducers: {},
   extraReducers: builder => {
     builder
@@ -57,7 +65,8 @@ const devicesSlice = createSlice({
       .addCase(approveDevice.fulfilled, (state, action) => { state.message = action.payload.detail; })
       .addCase(fetchDevices.pending, state => { state.status = "loading"; })
       .addCase(fetchDevices.fulfilled, (state, action) => { state.status = "succeeded"; state.list = Array.isArray(action.payload) ? action.payload : [];})
-      .addCase(fetchDevices.rejected, (state, action) => { state.status = "failed"; state.message = action.error.message || "Failed"; });
+      .addCase(fetchDevices.rejected, (state, action) => { state.status = "failed"; state.message = action.error.message || "Failed"; })
+      .addCase(fetchPendingDeviceCount.fulfilled, (state, action) => {state.pendingCount = action.payload; });
   },
 });
 

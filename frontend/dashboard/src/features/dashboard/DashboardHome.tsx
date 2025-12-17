@@ -1,9 +1,11 @@
-// src/features/dashboard/DashboardHome.tsx
 import React, { useEffect, useState } from "react";
 import StatCard from "../../components/ui/statCard";
 import ChartCard from "../../components/ui/chartCard";
 import { FaUsers, FaExclamationTriangle, FaEnvelope } from "react-icons/fa";
 import authApi from "../../api/axiosClient";
+import { DeviceApprovalList } from "../users/DeviceApprovalList";
+import { useAppSelector, useAppDispatch } from "../../store/hooks";
+import { fetchDevices } from "../../store/slices/devicesSlice";
 
 interface DashboardStats {
   users: number;
@@ -28,13 +30,16 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [usingPlaceholder, setUsingPlaceholder] = useState(false);
 
+  // DeviceApprovalList Redux
+  const dispatch = useAppDispatch();
+  const { list: devices, status: deviceStatus } = useAppSelector(state => state.devices);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await authApi.get("/dashboard/overview/");
         const data = response.data;
 
-        // Check if backend returned chart data
         const hasIncidentData = data.incident_trends?.labels?.length > 0;
         const hasMessageData = data.message_trends?.labels?.length > 0;
 
@@ -46,7 +51,6 @@ const DashboardPage: React.FC = () => {
           message_trends: hasMessageData ? data.message_trends : fallbackStats.message_trends,
         });
 
-        // Only show placeholder if either trend data is missing
         setUsingPlaceholder(!hasIncidentData || !hasMessageData);
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
@@ -59,7 +63,8 @@ const DashboardPage: React.FC = () => {
     };
 
     fetchStats();
-  }, []);
+    dispatch(fetchDevices()); // fetch devices for approvals
+  }, [dispatch]);
 
   if (loading) return <div className="p-6 text-gray-600">Loading dashboard...</div>;
 
@@ -73,6 +78,7 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {/* Stats cards */}
       <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
         <StatCard
           title="Users"
@@ -94,7 +100,8 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
         <ChartCard
           title="Incidents Over Time"
           labels={stats.incident_trends.labels}
@@ -109,10 +116,27 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* Device Approval List */}
+      <div className="mt-12">
+        <h2 className="mb-4 text-2xl font-semibold text-green-700">Device Approvals</h2>
+
+        {deviceStatus === "loading" && (
+          <div className="p-4 text-gray-600">Loading devices...</div>
+        )}
+
+        {deviceStatus === "failed" && (
+          <div className="p-4 text-red-600">Failed to load devices.</div>
+        )}
+
+        {deviceStatus === "succeeded" && devices.length === 0 && (
+          <div className="p-4 text-gray-500">No devices pending approval.</div>
+        )}
+
+        {deviceStatus === "succeeded" && devices.length > 0 && <DeviceApprovalList />}
+      </div>
+
       {usingPlaceholder && (
-        <p className="mt-4 italic text-gray-500">
-          Displaying placeholder data.
-        </p>
+        <p className="mt-4 italic text-gray-500">Displaying placeholder data.</p>
       )}
     </div>
   );

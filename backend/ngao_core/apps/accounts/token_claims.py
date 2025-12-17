@@ -1,6 +1,6 @@
 # ngao_core/apps/accounts/token_claims.py
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -17,3 +17,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             token["role"] = None
             token["admin_unit_uid"] = None
         return token
+    
+    def get_tokens_for_user(user, device_id=None):
+        refresh = RefreshToken.for_user(user)
+        if device_id:
+            refresh["device_id"] = device_id
+            return {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token)
+    }

@@ -1,4 +1,3 @@
-// src/routes/AppRoutes.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -11,12 +10,15 @@ import BirthRegistrationList from "../features/civilRegistration/BirthRegistrati
 import DeathRegistrationList from "../features/civilRegistration/DeathRegistrationList";
 import MarriageRegistrationList from "../features/civilRegistration/MarriageRegistrationList";
 import LoginPage from "../features/auth/LoginPage";
+import { DeviceApprovalList } from "../features/users/DeviceApprovalList";
 
 const AppRoutes = () => (
   <Routes>
+    {/* Public route */}
     <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardHome />} />
-    <Route element={<ProtectedRoute children={""} />}>
+
+    {/* Protected routes */}
+    <Route element={<ProtectedRoute />}>
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardHome />} />
         <Route path="/dashboard/officers" element={<OfficersPage />} />
@@ -24,9 +26,13 @@ const AppRoutes = () => (
         <Route path="/dashboard/births" element={<BirthRegistrationList />} />
         <Route path="/dashboard/deaths" element={<DeathRegistrationList />} />
         <Route path="/dashboard/marriages" element={<MarriageRegistrationList />} />
+        <Route path="/devices" element={<DeviceApprovalList />} />
       </Route>
     </Route>
 
+    {/* Catch-all */}
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes>
 );
+
+export default AppRoutes;

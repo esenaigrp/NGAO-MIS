@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "ngao_core.apps.accounts.middleware.DeviceCheckMiddleware",
 ]
 
 # ----------------------
@@ -130,3 +131,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key
 # ----------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# --- Authentication ---
+AUTH_USER_MODEL = "accounts.CustomUser"

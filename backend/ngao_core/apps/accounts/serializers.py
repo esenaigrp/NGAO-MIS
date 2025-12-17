@@ -10,9 +10,8 @@ from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from ngao_core.apps.accounts.models import (ContactPoint, CustomUser, OfficerProfile, Role)
 from ngao_core.apps.admin_structure.models import AdminUnit
+from .models import Device, DeviceApprovalRequest
 
-# IMPORTANT: I'm removing this redundant line, as the models are imported above.
-# from .models import ContactPoint, CustomUser, OfficerProfile, Role 
 
 User = get_user_model()
 
@@ -173,3 +172,20 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             "last_name": getattr(user, "last_name", ""),
         }
         return data
+    
+class DeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = "__all__"
+
+class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
+    device = DeviceSerializer(read_only=True)
+
+    class Meta:
+        model = DeviceApprovalRequest
+        fields = "__all__"
+
+class DeviceApprovalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = ["id", "is_trusted", "allowed_lat", "allowed_lon", "allowed_radius_meters"]

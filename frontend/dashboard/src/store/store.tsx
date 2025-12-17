@@ -4,7 +4,8 @@ import authReducer from "./slices/authSlice";
 import areasReducer from "./slices/areasSlice"; // your AreaState slice
 import usersReducer from "./slices/usersSlice"; 
 import incidentsReducer from "./slices/incidentsSlice";
-import dashboardReducer from "./slices/dashboardSlice"
+import dashboardReducer from "./slices/dashboardSlice";
+import devicesReducer from "./slices/devicesSlice";
 
 export const store = configureStore({
   reducer: {
@@ -12,7 +13,8 @@ export const store = configureStore({
     areas: areasReducer,
     users: usersReducer,
     incidents: incidentsReducer,
-    dashboard: dashboardReducer
+    dashboard: dashboardReducer,
+    devices: devicesReducer,
   },
 });
 

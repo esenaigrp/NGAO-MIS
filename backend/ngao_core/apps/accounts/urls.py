@@ -6,18 +6,21 @@ from .views import (
     UserViewSet,
     OfficerProfileViewSet,
     ContactPointViewSet,
-    CurrentUserView,
+    CurrentUserView, RegisterDeviceView, ApproveDeviceView, DeviceAdminViewSet
 )
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="users")
 router.register(r"officers", OfficerProfileViewSet, basename="officers")
 router.register(r"contact-points", ContactPointViewSet, basename="contact-points")
+router.register(r"devices", DeviceAdminViewSet, basename="device-admin")
 
 urlpatterns = [
     path("login/", CustomTokenObtainPairView.as_view(), name="login"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", CurrentUserView.as_view(), name="current-user"),
+    path("devices/register/", RegisterDeviceView.as_view(), name="register-device"),
+    path("devices/<str:device_id>/approve/", ApproveDeviceView.as_view(), name="approve-device"),
 ]
 
 urlpatterns += router.urls

@@ -144,4 +144,20 @@ class AuthService {
       throw Exception("Password reset failed");
     }
   }
-}
+
+  /// Geolocking 
+  
+  static Future<Map<String, dynamic>> registerDevice({required String deviceId, double? lat, double? lon}) async {
+    final response = await ApiClient.post('/accounts/devices/register/', data: {
+      "device_id": deviceId,
+      if(lat != null) "lat": lat,
+      if(lon != null) "lon": lon
+      });
+      return response.data;
+      }
+
+  static Future<Map<String, dynamic>> approveDevice({required String deviceId}) async {
+    final response = await ApiClient.post('/accounts/devices/$deviceId/approve/');
+    return response.data;
+    }
+  }

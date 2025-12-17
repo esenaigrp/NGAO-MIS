@@ -1,7 +1,7 @@
 import uuid
 from django.conf import settings
 from django.contrib.auth.models import (
-    AbstractBaseUser, BaseUserManager, PermissionsMixin
+    AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 )
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
@@ -9,8 +9,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import Group, Permission # Added for E304 fix
-
 
 # -------------------------
 # Validators
@@ -19,7 +17,6 @@ PHONE_VALIDATOR = RegexValidator(
     regex=r"^\+?[0-9]{7,15}$",
     message="Phone number must be in format '+254...' and contain 7-15 digits.",
 )
-
 
 # -------------------------
 # User Manager
@@ -59,7 +56,6 @@ class CustomUserManager(BaseUserManager):
 
         return self._create_user(email, password, **extra_fields)
 
-
 # -------------------------
 # Role Model
 # -------------------------
@@ -75,30 +71,26 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
-
 # -------------------------
-# Custom User Model (The primary user model)
+# Custom User Model
 # -------------------------
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
-
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)
-
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
-    
-    # E304 FIX: Defining groups/user_permissions to fix reverse accessor clashes
-    # The default related_name is 'user_set' which clashes if another model is also extending
+
+    # Unique related_names to avoid clashes
     groups = models.ManyToManyField(
         Group,
         verbose_name=_('groups'),
         blank=True,
-        help_text=_('The groups this user belongs to. A user will get all permissions granted to each of their groups.'),
-        related_name="custom_user_groups", # <-- Unique related_name 1
+        help_text=_('The groups this user belongs to.'),
+        related_name="custom_user_groups",
         related_query_name="custom_user",
     )
     user_permissions = models.ManyToManyField(
@@ -106,10 +98,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name=_('user permissions'),
         blank=True,
         help_text=_('Specific permissions for this user.'),
-        related_name="custom_user_permissions", # <-- Unique related_name 2
+        related_name="custom_user_permissions",
         related_query_name="custom_user_permission",
     )
-    # E304 FIX END
 
     objects = CustomUserManager()
 
@@ -125,18 +116,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-        
+
     @property
     def id(self):
-        """Allows access to the primary key using the conventional 'id' name."""
         return self.user_id
-
 
 # -------------------------
 # Officer Profile
 # -------------------------
 class OfficerProfile(models.Model):
-
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     user = models.OneToOneField(
@@ -145,32 +133,15 @@ class OfficerProfile(models.Model):
         related_name="officer_profile",
     )
 
-    phone = models.CharField(
-        max_length=20,
-        validators=[PHONE_VALIDATOR],
-        unique=True,
-    )
-
+    phone = models.CharField(max_length=20, validators=[PHONE_VALIDATOR], unique=True)
     otp_code = models.CharField(max_length=6)
     otp_created_at = models.DateTimeField(default=timezone.now)
-
-    role = models.ForeignKey(
-        Role,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="officers",
-    )
-
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, related_name="officers")
     role_text = models.CharField(max_length=120)
-
     badge_number = models.CharField(max_length=50, unique=True)
     id_number = models.CharField(max_length=50, unique=True)
-
     office_email = models.EmailField()
-
-    # SINGLE location field (cleaned)
     location = gis_models.PointField(default=Point(0.0, 0.0))
-
     admin_unit = models.ForeignKey(
         "admin_structure.AdminUnit",
         null=True,
@@ -178,14 +149,10 @@ class OfficerProfile(models.Model):
         on_delete=models.SET_NULL,
         related_name="officers",
     )
-
     is_active = models.BooleanField(default=True)
-
     notes = models.TextField(blank=True)
-
     reset_otp = models.CharField(max_length=6, null=True, blank=True)
     otp_expiry = models.DateTimeField(null=True, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -198,32 +165,23 @@ class OfficerProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.role_text}"
 
-
 # -------------------------
 # Contact Point
 # -------------------------
 class ContactPoint(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="contact_points",
-    )
-
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="contact_points")
     type = models.CharField(
         max_length=20,
         choices=[("phone", "phone"), ("email", "email"), ("other", "other")],
         default="phone",
     )
-
     value = models.CharField(max_length=255)
     is_primary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "type", "value")
-
 
 # -------------------------
 # OTP Model
@@ -236,3 +194,55 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.phone}: {self.code}"
+
+# -------------------------
+# Device Registration Model
+# -------------------------
+class Device(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devices"
+    )
+    device_id = models.CharField(max_length=255, unique=True)
+    device_name = models.CharField(max_length=100, blank=True)
+    is_trusted = models.BooleanField(default=False)
+    last_ip = models.GenericIPAddressField(blank=True, null=True)
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_devices'
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    allowed_lat = models.FloatField(null=True, blank=True)
+    allowed_lon = models.FloatField(null=True, blank=True)
+    allowed_radius_meters = models.FloatField(default=100)
+
+    def __str__(self):
+        return f"{self.device_name or self.device_id} ({'Trusted' if self.is_trusted else 'Pending'})"
+
+class DeviceApprovalRequest(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=[("pending", "Pending"), ("approved", "Approved"), ("denied", "Denied")],
+        default="pending"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='device_requests'
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='device_approvals'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)

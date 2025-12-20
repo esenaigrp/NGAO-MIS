@@ -7,7 +7,7 @@ class ResponseSerializer(serializers.ModelSerializer):
     """Serializer for incident response objects."""
     incident = serializers.SlugRelatedField(
         queryset=Incident.objects.all(),
-        slug_field='uid'
+        slug_field='id'
     )
     responder = serializers.StringRelatedField(read_only=True)
 
@@ -22,13 +22,13 @@ class IncidentSerializer(serializers.ModelSerializer):
     """
     reported_by = serializers.SlugRelatedField(
         queryset=CustomUser.objects.all(),
-        slug_field='user_id',
+        slug_field='id',
         allow_null=True,
         required=False,
     )
     location = serializers.SlugRelatedField(
         queryset=AdminUnit.objects.all(),
-        slug_field='uid',
+        slug_field= "user_id",
         allow_null=True,
         required=False,
     )
@@ -40,7 +40,7 @@ class IncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Incident
         fields = [
-            "uid",
+            "id",
             "title",
             "description",
             "incident_type",
@@ -53,7 +53,7 @@ class IncidentSerializer(serializers.ModelSerializer):
             "location_name",
             "responses",
         ]
-        read_only_fields = ("uid", "date_reported")
+        read_only_fields = ("id", "date_reported")
 
     def create(self, validated_data):
         incident = super().create(validated_data)

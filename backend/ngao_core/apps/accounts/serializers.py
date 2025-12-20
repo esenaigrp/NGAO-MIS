@@ -25,27 +25,27 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ["uid", "name", "description", "level"]
+        fields = ["id", "name", "description", "level"]
 
 
 class AdminUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminUnit
-        fields = ["uid", "name", "unit_type", "parent", "code"]
+        fields = ["id", "name", "unit_type", "parent", "code"]
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["user_id", "email", "first_name", "last_name"]
+        fields = ["id", "email", "first_name", "last_name"]
     
-    read_only_fields = ["user_id", "date_joined"]
+    read_only_fields = ["id", "date_joined"]
 
 class ContactPointSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactPoint
         fields = [
-            "uid",
+            "id",
             "user",
             "type",
             "value",
@@ -64,7 +64,7 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = OfficerProfile
         fields = (
-            "uid",
+            "id",
             "user_email",
             "role",
             "badge_number",
@@ -188,4 +188,4 @@ class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
 class DeviceApprovalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["id", "is_trusted", "allowed_lat", "allowed_lon", "allowed_radius_meters"]
+        fields = ["user_id", "is_trusted", "allowed_lat", "allowed_lon", "allowed_radius_meters"]

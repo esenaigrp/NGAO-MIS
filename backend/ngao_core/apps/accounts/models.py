@@ -60,7 +60,7 @@ class CustomUserManager(BaseUserManager):
 # Role Model
 # -------------------------
 class Role(models.Model):
-    uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     hierarchy_level = models.PositiveIntegerField(default=0)
@@ -76,7 +76,7 @@ class Role(models.Model):
 # -------------------------
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 
-    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=120)
@@ -119,13 +119,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def id(self):
-        return self.user_id
+        return self.id
 
 # -------------------------
 # Officer Profile
 # -------------------------
 class OfficerProfile(models.Model):
-    uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -169,7 +169,7 @@ class OfficerProfile(models.Model):
 # Contact Point
 # -------------------------
 class ContactPoint(models.Model):
-    uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="contact_points")
     type = models.CharField(
         max_length=20,

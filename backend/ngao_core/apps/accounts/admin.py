@@ -8,7 +8,7 @@ class OfficerProfileInline(admin.StackedInline):
     verbose_name_plural = 'Officer Profile'
     fk_name = 'user'  # This links OfficerProfile to CustomUser
     fields = ('phone', 'role', 'role_text', 'badge_number', 'id_number', 'office_email', 'admin_unit', 'is_active', 'notes')
-    readonly_fields = ('uid',)
+    readonly_fields = ('id',)
     extra = 0  # don't show extra empty forms
 
 @admin.register(CustomUser)

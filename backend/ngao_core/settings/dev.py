@@ -2,13 +2,18 @@ import os
 from .base import *
 
 
-GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
-GDAL_LIBRARY_PATH = "/opt/homebrew/opt/gdal/lib/libgdal.dylib"
+# GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
+# GDAL_LIBRARY_PATH = "/opt/homebrew/opt/gdal/lib/libgdal.dylib"
+
+GDAL_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/libgdal.so"
+GEOS_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/libgeos_c.so"
 
 os.environ["GDAL_LIBRARY_PATH"] = GDAL_LIBRARY_PATH
 os.environ["GEOS_LIBRARY_PATH"] = GEOS_LIBRARY_PATH
 
-PROJ_LIB = "/opt/homebrew/share/proj"
+# PROJ_LIB = "/opt/homebrew/share/proj"
+PROJ_LIB = "~/Documents/projects/NGAO-MIS"
+
 
 DEBUG = True
 

@@ -29,7 +29,7 @@ class Incident(models.Model):
     ]
 
     # Primary Key
-    uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Core fields
     reporter_phone = models.CharField(max_length=20)
@@ -143,6 +143,7 @@ class Incident(models.Model):
 
 
 class Response(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     incident = models.ForeignKey(
         Incident, on_delete=models.CASCADE, related_name="responses"
     )

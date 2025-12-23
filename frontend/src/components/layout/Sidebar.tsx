@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const Sidebar = () => {
   const userRole = useAppSelector((state) => state.auth.user?.role);
-
+console.log("User Role in Sidebar:", userRole);
   return (
     <aside className="w-64 h-screen p-4 text-white bg-green-900">
       <h2 className="mb-6 text-xl font-bold">NGAO MIS</h2>

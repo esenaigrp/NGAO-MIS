@@ -5,15 +5,10 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchMyIncidents } from "../../store/slices/incidentsSlice";
 import StatCard from "../../components/ui/statCard";
 
-const OfficerDashboard: React.FC = () => {
+const DashboardHome: React.FC = () => {
   const dispatch = useAppDispatch();
-  // const { assigned, stats, status } = useAppSelector(
-  //   state => state.incidents
-  // );
+  const { assigned, stats, status } = useAppSelector( state => state.incidents);
 
-  let status = "loading";
-  let assigned = [];
-  const stats = [];
 
   useEffect(() => {
     dispatch(fetchMyIncidents());
@@ -29,7 +24,7 @@ const OfficerDashboard: React.FC = () => {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
-          {/* <StatCard
+          <StatCard
             title="Open Incidents"
             value={stats.open}
             icon={<FaClock />}
@@ -46,7 +41,7 @@ const OfficerDashboard: React.FC = () => {
             value={stats.resolved_today}
             icon={<FaCheckCircle />}
             color="bg-green-700"
-          /> */}
+          />
         </div>
 
         {/* Assigned Incidents */}
@@ -108,4 +103,4 @@ const OfficerDashboard: React.FC = () => {
   );
 };
 
-export default OfficerDashboard;
+export default DashboardHome;

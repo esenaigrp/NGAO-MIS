@@ -3,7 +3,7 @@ import { store } from "../store";
 import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from "../auth/tokenStorage";
 import { logout } from "../store/slices/authSlice";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8200/api";
 
 const axiosClient = axios.create({
   baseURL: API_BASE,

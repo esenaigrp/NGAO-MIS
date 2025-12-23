@@ -3,7 +3,7 @@ import axios from "axios";
 import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from "../auth/tokenStorage";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: "http://127.0.0.1:8200",
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,7 +35,7 @@ api.interceptors.response.use(
       }
 
       try {
-        const res = await axios.post("http://127.0.0.1:8000/accounts/token/refresh/", {
+        const res = await axios.post("http://127.0.0.1:8200/accounts/token/refresh/", {
           refresh,
         });
 

@@ -53,14 +53,14 @@ export const login = createAsyncThunk<
 >("auth/login", async ({ email, password }, thunkAPI) => {
   try {
     // Login
-    const res = await axios.post("http://127.0.0.1:8000/api/accounts/login/", { email, password });
+    const res = await axios.post("http://127.0.0.1:8200/api/accounts/login/", { email, password });
     const tokens = res.data;
 
     setAccessToken(tokens.access);
     setRefreshToken(tokens.refresh);
 
     // Fetch user profile
-    const profileRes = await axios.get("http://127.0.0.1:8000/api/accounts/me/", {
+    const profileRes = await axios.get("http://127.0.0.1:8200/api/accounts/me/", {
       headers: { Authorization: `Bearer ${tokens.access}` },
     });
 
@@ -82,7 +82,7 @@ export const checkAuth = createAsyncThunk(
     }
 
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/accounts/me/", {
+      const res = await axios.get("http://127.0.0.1:8200/api/accounts/me/", {
         headers: { Authorization: `Bearer ${access}` },
       });
       return { user: res.data, accessToken: access, refreshToken: refresh };

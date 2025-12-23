@@ -13,6 +13,9 @@ export type Incident = {
   location?: any;
   reported_by?: string;
   timestamp?: string;
+  reference?: string;
+  category?: string;
+  priority?: string;
 };
 
 interface IncidentsState {
@@ -22,6 +25,13 @@ interface IncidentsState {
   total: number;
   page: number;
   pageSize: number;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  stats?: {
+    open: number;
+    urgent: number;
+    resolved_today?: number;
+  };
+  assigned?: Incident[];
 }
 
 const initialState: IncidentsState = {
@@ -31,6 +41,13 @@ const initialState: IncidentsState = {
   total: 0,
   page: 1,
   pageSize: 10,
+  status: "idle",
+  stats: {
+    open: 0,
+    urgent: 0,
+    resolved_today: 0,
+  },
+  assigned: [],
 };
 
 /* ============================

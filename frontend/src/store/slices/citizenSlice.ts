@@ -5,7 +5,7 @@ import { RootState } from "../store";
 
 // Citizen type
 export interface Citizen {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   id_number?: string;
@@ -23,12 +23,20 @@ interface CitizenState {
   citizens: Citizen[];
   loading: boolean;
   error: string | null;
+  birth: Citizen[];
+  death: Citizen[];
+  marriage: Citizen[];
+  currentItem?: Citizen;
 }
 
 const initialState: CitizenState = {
   citizens: [],
   loading: false,
   error: null,
+  birth: [],
+  death: [],
+  marriage: [],
+  currentItem: {} as Citizen,
 };
 
 // ---------------------

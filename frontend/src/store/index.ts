@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import usersReducer from "./slices/usersSlice";
 import incidentsReducer from "./slices/incidentsSlice";
+import officersReducers from "./slices/officersSlice";
 
 export const store = configureStore({
   reducer: {

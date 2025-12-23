@@ -14,7 +14,7 @@ FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dashboard" / "dist"
 # ----------------------
 # Security
 # ----------------------
-SECRET_KEY = "your-secret-key-here"
+SECRET_KEY = "7288cfeda26f94b1a59089b9adf90343"
 DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
@@ -84,8 +84,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "ngao_db",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
+        "USER": "ngao_user",
+        "PASSWORD": "Ngao@2025",
         "HOST": "localhost",
         "PORT": "5432",
     }
@@ -130,8 +130,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # ----------------------
 # Default primary key
 # ----------------------
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Authentication ---
 AUTH_USER_MODEL = "accounts.CustomUser"

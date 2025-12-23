@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.gis.db import models
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
@@ -23,7 +24,7 @@ class Area(models.Model):
         ("sub_location", "Sub Location"),
         ("village", "Village"),
     )
-
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=150)
     code = models.CharField(max_length=20, unique=True)
     area_type = models.CharField(max_length=20, choices=AREA_TYPES)

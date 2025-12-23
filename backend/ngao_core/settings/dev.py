@@ -21,9 +21,9 @@ DEBUG = True
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": os.getenv("POSTGRES_DB", "ngao_mis"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+        "NAME": os.getenv("POSTGRES_DB", "ngao_db"),
+        "USER": os.getenv("POSTGRES_USER", "ngao_user"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "Ngao@2025"),
         "HOST": os.getenv("POSTGRES_HOST", "localhost"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }

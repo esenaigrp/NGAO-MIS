@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -9,7 +10,8 @@ class Citizen(models.Model):
         ("M", "Male"),
         ("F", "Female"),
     )
-
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     id_number = models.CharField(
         max_length=20,
         unique=True,
@@ -57,6 +59,7 @@ class CitizenQueryLog(models.Model):
         ("general", "General Lookup"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

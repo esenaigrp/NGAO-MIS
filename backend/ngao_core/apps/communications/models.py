@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from ngao_core.apps.admin_structure.models import AdminUnit, Location
@@ -12,7 +13,7 @@ class Communication(models.Model):
         ("ANN", "Announcement"),
         ("NOT", "Notification"),
     ]
-
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     body = models.TextField()
     type = models.CharField(max_length=3, choices=TYPE_CHOICES)
@@ -34,10 +35,11 @@ class Communication(models.Model):
         verbose_name_plural = "Communications"
 
     def __str__(self):
-        return f"{self.title} ({self.get_type_display()})"
+        return f"{self.title}"
 
 
 class Message(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_messages"
     )
@@ -53,6 +55,7 @@ class Message(models.Model):
 
 
 class Announcement(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
     body = models.TextField()
     creator = models.ForeignKey(
@@ -68,6 +71,7 @@ class Announcement(models.Model):
         return self.title
 
 class Baraza(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
     date = models.DateField()
     location = models.CharField(max_length=255)
@@ -87,6 +91,7 @@ class Baraza(models.Model):
         return self.title
     
 class USSDLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     session_id = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20)
     request_text = models.TextField()
@@ -94,6 +99,7 @@ class USSDLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class SMSLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     recipients = models.JSONField()  # list of phone numbers
     message = models.TextField()

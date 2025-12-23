@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -73,6 +74,7 @@ class BirthRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     child = models.OneToOneField(
         Citizen,
         on_delete=models.SET_NULL,
@@ -128,6 +130,7 @@ class DeathRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     citizen = models.ForeignKey(
         Citizen,
         on_delete=models.PROTECT,
@@ -168,6 +171,7 @@ class MarriageRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     spouse_1 = models.ForeignKey(
         Citizen,
         on_delete=models.PROTECT,

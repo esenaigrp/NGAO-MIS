@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
@@ -14,7 +15,8 @@ class NationalIDRegistrationRequest(models.Model):
         ("completed", "Completed"),
         ("rejected", "Rejected"),
     )
-
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     applicant = models.ForeignKey(
         Citizen,
         on_delete=models.PROTECT,

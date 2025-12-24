@@ -27,39 +27,38 @@ PHONE_VALIDATOR = RegexValidator(
 # User Manager
 # -------------------------
 class CustomUserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def _create_user(self, email, password, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError("Email must be set")
-
+            raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
+        
+        # Get or create default role
+        default_role, _ = Role.objects.get_or_create(
+            name='User',
+            defaults={'description': 'Default user role', 'hierarchy_level': 0}
+        )
+        
+        # Set role if not provided
+        if 'role' not in extra_fields:
+            extra_fields['role'] = default_role
+            
         user = self.model(email=email, **extra_fields)
-
-        if password:
-            user.set_password(password)
-        else:
-            user.set_unusable_password()
-
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_active", True)
-        extra_fields.setdefault("is_staff", False)
-        extra_fields.setdefault("is_superuser", False)
-        return self._create_user(email, password, **extra_fields)
-
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-
-        if not extra_fields["is_staff"]:
-            raise ValueError("Superuser must have is_staff=True.")
-        if not extra_fields["is_superuser"]:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self._create_user(email, password, **extra_fields)
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        
+        # Get or create admin role for superuser
+        admin_role, _ = Role.objects.get_or_create(
+            name='Admin',
+            defaults={'description': 'Administrator role', 'hierarchy_level': 3}
+        )
+        extra_fields['role'] = admin_role
+        
+        return self.create_user(email, password, **extra_fields)
 
 
 # -------------------------
@@ -77,7 +76,6 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
-
 # -------------------------
 # Custom User Model
 # -------------------------
@@ -89,6 +87,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+
 
     # Unique related_names to avoid clashes
     groups = models.ManyToManyField(

@@ -137,7 +137,7 @@ class RegisterDeviceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device_id = request.data.get("device_id")
+        device_id = request.data.get("device_number")
         device_name = request.data.get("device_name", "")
         user = request.user
         device, created = Device.objects.get_or_create(

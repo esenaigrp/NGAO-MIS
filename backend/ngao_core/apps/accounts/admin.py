@@ -26,7 +26,7 @@ class OfficerProfileInline(admin.StackedInline):
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
     ordering = ("email",)
-    list_display = ("id", "email", "first_name", "last_name", "is_staff", "is_active")
+    list_display = ("id", "email", "first_name", "last_name", "is_staff", "is_active", "role")
     list_filter = ("is_active",)
     search_fields = ("email", "first_name", "last_name")
 

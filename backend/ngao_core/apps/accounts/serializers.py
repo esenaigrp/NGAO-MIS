@@ -8,7 +8,12 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from ngao_core.apps.accounts.models import (ContactPoint, CustomUser, OfficerProfile, Role)
+from ngao_core.apps.accounts.models import (
+    ContactPoint,
+    CustomUser,
+    OfficerProfile,
+    Role,
+)
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Device, DeviceApprovalRequest
 
@@ -19,13 +24,20 @@ User = get_user_model()
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'email', 'first_name', 'last_name', 'is_active', 'is_staff')
-        read_only_fields = ('is_staff', 'is_active', 'is_superuser', 'last_login', 'date_joined')
+        fields = ("id", "email", "first_name", "last_name", "is_active", "is_staff")
+        read_only_fields = (
+            "is_staff",
+            "is_active",
+            "is_superuser",
+            "last_login",
+            "date_joined",
+        )
+
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ["id", "name", "description", "level"]
+        fields = ["id", "name", "description", "hierarchy_level"]
 
 
 class AdminUnitSerializer(serializers.ModelSerializer):
@@ -35,11 +47,13 @@ class AdminUnitSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    role = RoleSerializer(read_only=True)
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name"]
-    
+        fields = ["id", "email", "first_name", "last_name", "role", "date_joined"]
+
     read_only_fields = ["id", "date_joined"]
+
 
 class ContactPointSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,8 +68,9 @@ class ContactPointSerializer(serializers.ModelSerializer):
             "officer",
             "phone_number",
             "email",
-            ]
-        
+        ]
+
+
 class OfficerProfileSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user_email", read_only=True)
     role = RoleSerializer(read_only=True)
@@ -76,7 +91,7 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "rank",
             "admin_unit",
-            )
+        )
 
     # Redefining the related fields outside of the Meta class for clarity (Standard DRF practice)
     role_id = serializers.PrimaryKeyRelatedField(
@@ -88,7 +103,7 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    
+
     # Second Meta definition removed, using the first one's fields structure.
     # The fields list at the end of the original OfficerProfileSerializer was confusing.
 
@@ -96,24 +111,26 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
 class IncidentSummarySerializer(serializers.ModelSerializer):
     location_name = serializers.CharField(source="location.name", read_only=True)
     reported_by = serializers.CharField(source="reported_by.email", read_only=True)
-    
+
     class Meta:
         model = Incident
-        fields = ("id",
-                  "title",
-                  "incident_type",
-                  "status",
-                  "location",
-                  "location_name",
-                  "date_reported",
-                  "reported_by",
-                  )
-        
+        fields = (
+            "id",
+            "title",
+            "incident_type",
+            "status",
+            "location",
+            "location_name",
+            "date_reported",
+            "reported_by",
+        )
+
+
 # ----------------------------------------------------------------------
 # 🔑 LOGIN/TOKEN SERIALIZER (FIXED AND CONSOLIDATED)
-# --------------------------------------------------------------------   
+# --------------------------------------------------------------------
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
+    username_field = "email"
 
     @classmethod
     def get_token(cls, user):
@@ -124,8 +141,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # --- CUSTOM AUTH WITH EMAIL ---
         credentials = {
-            'email': attrs.get('email'),
-            'password': attrs.get('password'),
+            "email": attrs.get("email"),
+            "password": attrs.get("password"),
         }
 
         user = authenticate(**credentials)
@@ -141,18 +158,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # --- ADD USER PAYLOAD ---
         data["user"] = {
-             "id": self.user.user_id,
-             "email": self.user.email,
-             "first_name": self.user.first_name,
-             "last_name": self.user.last_name,
-             "role": self.user.role,
+            "id": self.user.id,
+            "email": self.user.email,
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "role": self.user.role.name if self.user.role else None,
         }
 
         return data
 
-
-        
-    
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = User.EMAIL_FIELD  # login with email
@@ -172,11 +186,13 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             "last_name": getattr(user, "last_name", ""),
         }
         return data
-    
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = "__all__"
+
 
 class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
     device = DeviceSerializer(read_only=True)
@@ -185,7 +201,14 @@ class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
         model = DeviceApprovalRequest
         fields = "__all__"
 
+
 class DeviceApprovalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["user_id", "is_trusted", "allowed_lat", "allowed_lon", "allowed_radius_meters"]
+        fields = [
+            "user_id",
+            "is_trusted",
+            "allowed_lat",
+            "allowed_lon",
+            "allowed_radius_meters",
+        ]

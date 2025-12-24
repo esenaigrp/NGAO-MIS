@@ -74,135 +74,132 @@ const OfficersPage: React.FC = () => {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="p-4">
-      <h2 className="mb-4 text-xl font-bold">Officers Management</h2>
+    <div className="min-h-screen bg-gray-100 font-ngao">
+      <div className="px-6 py-8 mx-auto max-w-7xl">
 
-      {/* Create Officer */}
-      <div className="p-4 mb-6 border rounded bg-gray-50">
-        <h3 className="mb-2 font-semibold">Add New Officer</h3>
-        <input
-          type="text"
-          placeholder="First Name"
-          value={newOfficer.user?.first_name || ""}
-          onChange={(e) =>
-            setNewOfficer({ ...newOfficer, user: { ...newOfficer.user, first_name: e.target.value } })
-          }
-          className="p-1 mr-2 border"
-        />
-        <input
-          type="text"
-          placeholder="Last Name"
-          value={newOfficer.user?.last_name || ""}
-          onChange={(e) =>
-            setNewOfficer({ ...newOfficer, user: { ...newOfficer.user, last_name: e.target.value } })
-          }
-          className="p-1 mr-2 border"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={newOfficer.user?.email || ""}
-          onChange={(e) =>
-            setNewOfficer({ ...newOfficer, user: { ...newOfficer.user, email: e.target.value } })
-          }
-          className="p-1 mr-2 border"
-        />
-        <button onClick={handleCreate} className="btn-primary">
-          Add Officer
-        </button>
-      </div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Officers Management
+          </h1>
+        </div>
 
-      {/* Officers Table */}
-      <table className="w-full border table-auto">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Badge Number</th>
-            <th>Role</th>
-            <th>Admin Unit</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {officers.map((o) => (
-            <tr key={o.uid}>
-              <td>{`${o.user.first_name} ${o.user.last_name}`}</td>
-              <td>{o.user.email}</td>
-              <td>{o.badge_number || "-"}</td>
-              <td>{o.role_text || o.role?.name || "-"}</td>
-              <td>{typeof o.admin_unit === "string" ? o.admin_unit : o.admin_unit?.name || "-"}</td>
-              <td>{(o as any).active ? "Active" : "Inactive"}</td>
-              <td className="space-x-2">
-                <button onClick={() => setEditingOfficer(o)} className="btn-secondary">
-                  Edit
-                </button>
-                <button onClick={() => handleToggleStatus(o)} className="btn-warning">
-                  Toggle Status
-                </button>
-                <button onClick={() => handleAssignRole(o)} className="btn-info">
-                  Assign Role
-                </button>
-                <button onClick={() => handleAssignAdminUnit(o)} className="btn-info">
-                  Assign Unit
-                </button>
-                <button onClick={() => handleDelete(o.uid)} className="btn-danger">
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        {/* Add Officer Card */}
+        <div className="mb-10 bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Add New Officer
+            </h2>
+          </div>
 
-      {/* Edit Officer Modal */}
-      {editingOfficer && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="p-4 bg-white rounded w-96">
-            <h3 className="mb-2 font-bold">Edit Officer</h3>
+          <div className="grid gap-4 p-6 md:grid-cols-4">
             <input
               type="text"
-              value={editingOfficer.user.first_name}
-              onChange={(e) =>
-                setEditingOfficer({
-                  ...editingOfficer,
-                  user: { ...editingOfficer.user, first_name: e.target.value },
-                })
-              }
-              className="w-full p-1 mb-2 border"
+              placeholder="First Name"
+              className="px-3 py-2 border rounded focus:ring focus:ring-green-200"
             />
             <input
               type="text"
-              value={editingOfficer.user.last_name}
-              onChange={(e) =>
-                setEditingOfficer({
-                  ...editingOfficer,
-                  user: { ...editingOfficer.user, last_name: e.target.value },
-                })
-              }
-              className="w-full p-1 mb-2 border"
+              placeholder="Last Name"
+              className="px-3 py-2 border rounded focus:ring focus:ring-green-200"
             />
             <input
               type="email"
-              value={editingOfficer.user.email}
-              onChange={(e) =>
-                setEditingOfficer({
-                  ...editingOfficer,
-                  user: { ...editingOfficer.user, email: e.target.value },
-                })
-              }
-              className="w-full p-1 mb-2 border"
+              placeholder="Email"
+              className="px-3 py-2 border rounded focus:ring focus:ring-green-200"
             />
-            <button onClick={handleUpdate} className="mr-2 btn-primary">
-              Save
-            </button>
-            <button onClick={() => setEditingOfficer(null)} className="btn-secondary">
-              Cancel
+
+            <button
+              className="px-4 py-2 font-semibold text-white bg-green-700 rounded hover:bg-green-800"
+            >
+              Add Officer
             </button>
           </div>
         </div>
-      )}
+
+        {/* Officers Table */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Registered Officers
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left bg-gray-100">
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Badge</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Admin Unit</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {officers.map((o) => (
+                  <tr
+                    key={o.uid}
+                    className="border-t hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      {o.user.first_name} {o.user.last_name}
+                    </td>
+
+                    <td className="px-4 py-3 text-gray-600">
+                      {o.user.email}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {o.badge_number || "-"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {o.role_text || o.role?.name || "-"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {typeof o.admin_unit === "string"
+                        ? o.admin_unit
+                        : o.admin_unit?.name || "-"}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded ${
+                          (o as any).active
+                            ? "text-green-700 bg-green-100"
+                            : "text-red-700 bg-red-100"
+                        }`}
+                      >
+                        {(o as any).active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3 space-x-2">
+                      <button className="px-3 py-1 text-sm text-blue-700 bg-blue-100 rounded hover:bg-blue-200">
+                        Edit
+                      </button>
+
+                      <button className="px-3 py-1 text-sm text-yellow-700 bg-yellow-100 rounded hover:bg-yellow-200">
+                        Toggle
+                      </button>
+
+                      <button className="px-3 py-1 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };

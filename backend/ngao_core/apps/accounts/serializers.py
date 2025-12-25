@@ -43,7 +43,7 @@ class RoleSerializer(serializers.ModelSerializer):
 class AdminUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminUnit
-        fields = ["id", "name", "unit_type", "parent", "code"]
+        fields = ["id", "name", "parent", "code"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -72,37 +72,37 @@ class ContactPointSerializer(serializers.ModelSerializer):
 
 
 class OfficerProfileSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source="user_email", read_only=True)
-    role = RoleSerializer(read_only=True)
+    user = UserSerializer()
+    # role = RoleSerializer(read_only=True)
+    admin_unit = AdminUnitSerializer(read_only=True)
     contact_points = ContactPointSerializer(many=True, read_only=True)
 
     class Meta:
         model = OfficerProfile
         fields = (
             "id",
-            "user_email",
-            "role",
+            "user",
             "badge_number",
             "phone",
-            "official_email",
+            "office_email",
             "location",
             "is_active",
-            "contact_points",
+            "contact_points",           
             "created_at",
-            "rank",
+            # "rank",
             "admin_unit",
         )
 
     # Redefining the related fields outside of the Meta class for clarity (Standard DRF practice)
-    role_id = serializers.PrimaryKeyRelatedField(
-        source="role", queryset=Role.objects.all(), write_only=True, required=False
-    )
-    admin_unit_id = serializers.PrimaryKeyRelatedField(
-        source="admin_unit",
-        queryset=AdminUnit.objects.all(),
-        write_only=True,
-        required=False,
-    )
+    # role_id = serializers.PrimaryKeyRelatedField(
+    #     source="role", queryset=Role.objects.all(), write_only=True, required=False
+    # )
+    # admin_unit_id = serializers.PrimaryKeyRelatedField(
+    #     source="admin_unit",
+    #     queryset=AdminUnit.objects.all(),
+    #     write_only=True,
+    #     required=False,
+    # )
 
     # Second Meta definition removed, using the first one's fields structure.
     # The fields list at the end of the original OfficerProfileSerializer was confusing.

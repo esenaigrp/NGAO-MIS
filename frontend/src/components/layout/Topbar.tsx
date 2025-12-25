@@ -10,7 +10,7 @@ const Topbar = () => {
   const role = useAppSelector(state => state.auth.user?.role);
 
   useEffect(() => {
-    if (role === "SUPER_ADMIN") {
+    if (role?.name === "Admin" || role?.name === "Officer") {
       dispatch(fetchPendingDeviceCount());
     }
   }, [dispatch, role]);
@@ -19,7 +19,7 @@ const Topbar = () => {
     <header className="flex items-center justify-between px-6 py-3 bg-white shadow">
       <h1 className="text-lg font-semibold">Dashboard</h1>
 
-      {role === "SUPER_ADMIN" && pending > 0 && (
+      {role?.name === "Admin" && pending > 0 && (
         <span className="px-3 py-1 text-sm text-white bg-red-600 rounded-full">
           {pending} Device Approvals
         </span>

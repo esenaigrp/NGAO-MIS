@@ -6,12 +6,19 @@ import axios from "axios";
 // ---------------------
 // User Type
 // ---------------------
+
+interface Role {
+  id: string;
+  name: string;
+  hierarchy_level: number;
+  description: string;
+}
 export interface User {
   user_id?: string;
   email?: string;
   first_name?: string;
   last_name?: string;
-  role?: string;
+  role?: Role;
   allowed_area_codes?: string[];
 }
 

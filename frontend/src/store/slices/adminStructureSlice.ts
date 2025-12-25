@@ -4,25 +4,33 @@ import api from "../../api/axiosClient";
 // -------------------------
 // Types
 // -------------------------
+
 export interface AdminUnit {
-  uid: string;
+  id: string;
   name: string;
-  unit_type: string;
   code?: string;
-  parent_unit?: string | AdminUnit | null;
+  type: string;
+  geometry?: any;
+  properties: {
+    name: string;
+    code?: string;
+    parent?: string | null;
+    level?: number;
+    [key: string]: any;
+  };
 }
 
 // -------------------------
 // Slice State
 // -------------------------
 interface AdminStructureState {
-  units: AdminUnit[];
+  adminUnits: AdminUnit[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AdminStructureState = {
-  units: [],
+  adminUnits: [],
   loading: false,
   error: null,
 };
@@ -39,7 +47,7 @@ export const fetchAdminUnits = createAsyncThunk<
 >("adminStructure/fetchAll", async (_, thunkAPI) => {
   try {
     const res = await api.get("/admin-units/");
-    return res.data;
+    return res.data.features;
   } catch (err: any) {
     return thunkAPI.rejectWithValue("Failed to fetch admin units");
   }
@@ -95,7 +103,7 @@ const adminStructureSlice = createSlice({
   initialState,
   reducers: {
     clearUnits: (state) => {
-      state.units = [];
+      state.adminUnits = [];
       state.loading = false;
       state.error = null;
     },
@@ -109,7 +117,7 @@ const adminStructureSlice = createSlice({
       })
       .addCase(fetchAdminUnits.fulfilled, (s, a: PayloadAction<AdminUnit[]>) => {
         s.loading = false;
-        s.units = a.payload;
+        s.adminUnits = a.payload;
       })
       .addCase(fetchAdminUnits.rejected, (s, a) => {
         s.loading = false;
@@ -117,16 +125,16 @@ const adminStructureSlice = createSlice({
       })
       // CREATE
       .addCase(createAdminUnit.fulfilled, (s, a: PayloadAction<AdminUnit>) => {
-        s.units.push(a.payload);
+        s.adminUnits.push(a.payload);
       })
       // UPDATE
       .addCase(updateAdminUnit.fulfilled, (s, a: PayloadAction<AdminUnit>) => {
-        const index = s.units.findIndex((u) => u.uid === a.payload.uid);
-        if (index !== -1) s.units[index] = a.payload;
+        const index = s.adminUnits.findIndex((u) => u.id === a.payload.id);
+        if (index !== -1) s.adminUnits[index] = a.payload;
       })
       // DELETE
       .addCase(deleteAdminUnit.fulfilled, (s, a: PayloadAction<string>) => {
-        s.units = s.units.filter((u) => u.uid !== a.payload);
+        s.adminUnits = s.adminUnits.filter((u) => u.id !== a.payload);
       });
   },
 });

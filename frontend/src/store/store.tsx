@@ -8,6 +8,7 @@ import dashboardReducer from "./slices/dashboardSlice";
 import devicesReducer from "./slices/devicesSlice";
 import officersReducer from "./slices/officersSlice";
 import civilReducer from "./slices/citizenSlice";
+import adminUnitsReducer from "./slices/adminStructureSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,7 +19,8 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     devices: devicesReducer,
     officers: officersReducer,
-    civil: civilReducer
+    civil: civilReducer,
+    adminUnits: adminUnitsReducer
   },
 });
 

@@ -7,7 +7,7 @@ import incidentsReducer from "./slices/incidentsSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import devicesReducer from "./slices/devicesSlice";
 import officersReducer from "./slices/officersSlice";
-import civilReducer from "./slices/citizenSlice";
+import civilReducer from "./slices/civilSlice";
 import adminUnitsReducer from "./slices/adminStructureSlice";
 
 export const store = configureStore({

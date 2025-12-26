@@ -11,200 +11,303 @@ import {
   Incident,
 } from "../../store/slices/incidentsSlice";
 
-const placeholderIncidents: Incident[] = [
-  {
-    id: -1,
-    title: "Sample Incident 1",
-    description: "This is a placeholder incident",
-    incident_type: "Test",
-    status: "Open",
-    location: "Unknown",
-    reported_by: "Admin",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: -2,
-    title: "Sample Incident 2",
-    description: "This is another placeholder",
-    incident_type: "Test",
-    status: "Closed",
-    location: "Unknown",
-    reported_by: "Admin",
-    timestamp: new Date().toISOString(),
-  },
-];
 
 const IncidentsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { list, loading, error, page, pageSize, total } = useAppSelector(
-    (state) => state.incidents
-  );
+  const { list, loading, error, page, pageSize, total } = useAppSelector((state) => state.incidents);
+  const { user } = useAppSelector((state) => state.auth);
 
-  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
-  const [newIncident, setNewIncident] = useState<Partial<Incident>>({});
+  const [editingIncident, setEditingIncident] = useState<any | null>(null);
+  const [newIncident, setNewIncident] = useState<any>({
+    title: "",
+    description: "",
+    incident_type: "other",
+    reporter_phone: "",
+  });
+
   const totalPages = Math.ceil(total / pageSize);
 
   useEffect(() => {
     dispatch(fetchIncidents({ page, pageSize }));
   }, [dispatch, page, pageSize]);
 
-  // Decide what to display: real data or placeholder
-  const hasData = list.length > 0;
-  const incidentsToShow = hasData ? list : placeholderIncidents;
-
   const handleCreate = () => {
-    if (!newIncident.title) return alert("Title is required");
+    if (!newIncident.title || !newIncident.description) {
+      alert("Title and description are required");
+      return;
+    }
+
     dispatch(createIncident(newIncident));
-    setNewIncident({});
+    setNewIncident({
+      title: "",
+      description: "",
+      incident_type: "other",
+      reporter_phone: "",
+    });
   };
 
   const handleUpdate = () => {
     if (!editingIncident) return;
-    dispatch(updateIncident({ id: editingIncident.id, payload: editingIncident }));
+    dispatch(
+      updateIncident({
+        id: editingIncident.id,
+        payload: editingIncident,
+      })
+    );
     setEditingIncident(null);
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this incident?")) {
+  const handleDelete = (id: string) => {
+    if (window.confirm("Delete this incident?")) {
       dispatch(deleteIncident(id));
     }
   };
 
-  const handleNextPage = () => {
-    if (page < totalPages) dispatch(setPage(page + 1));
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) dispatch(setPage(page - 1));
-  };
-
-  if (loading) return <p>Loading incidents...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading) return <p className="p-6">Loading incidents…</p>;
+  if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
-    <div className="p-4">
-      <h2 className="mb-4 text-xl font-bold">Incident Management</h2>
+    <div className="p-6 space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Incident Management
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Report, track, and manage incidents
+        </p>
+      </div>
 
       {/* Create Incident */}
-      <div className="p-4 mb-6 border rounded bg-gray-50">
-        <h3 className="mb-2 font-semibold">Add New Incident</h3>
-        <input
-          type="text"
-          placeholder="Title"
-          value={newIncident.title || ""}
-          onChange={(e) => setNewIncident({ ...newIncident, title: e.target.value })}
-          className="p-1 mr-2 border"
-        />
-        <input
-          type="text"
-          placeholder="Description"
-          value={newIncident.description || ""}
-          onChange={(e) => setNewIncident({ ...newIncident, description: e.target.value })}
-          className="p-1 mr-2 border"
-        />
-        <button onClick={handleCreate} className="btn-primary">
-          Add Incident
-        </button>
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-lg font-medium text-gray-900">
+          Report New Incident
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Title */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Title
+            </label>
+            <input
+              type="text"
+              value={newIncident.title}
+              onChange={(e) =>
+                setNewIncident({ ...newIncident, title: e.target.value })
+              }
+              placeholder="Brief incident title"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Incident Type
+            </label>
+            <select
+              value={newIncident.incident_type}
+              onChange={(e) =>
+                setNewIncident({
+                  ...newIncident,
+                  incident_type: e.target.value,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="other">Other</option>
+              <option value="theft">Theft</option>
+              <option value="assault">Assault</option>
+              <option value="accident">Accident</option>
+            </select>
+          </div>
+
+           {/* Phone */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Reporter Phone
+            </label>
+            <input
+              type="tel"
+              value={newIncident.reporter_phone}
+              onChange={(e) =>
+                setNewIncident({
+                  ...newIncident,
+                  reporter_phone: e.target.value,
+                })
+              }
+              placeholder="+2547…"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Description
+            </label>
+            <textarea
+              rows={4}
+              value={newIncident.description}
+              onChange={(e) =>
+                setNewIncident({
+                  ...newIncident,
+                  description: e.target.value,
+                })
+              }
+              placeholder="Describe what happened…"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium
+                     text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            Submit Incident
+          </button>
+        </div>
       </div>
 
       {/* Incidents Table */}
-      <table className="w-full border table-auto">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Location</th>
-            <th>Reported By</th>
-            <th>Timestamp</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {incidentsToShow.map((i) => (
-            <tr key={i.id} className={i.id < 0 ? "opacity-50 italic" : ""}>
-              <td>{i.title}</td>
-              <td>{i.description || "-"}</td>
-              <td>{i.incident_type || "-"}</td>
-              <td>{i.status || "-"}</td>
-              <td>{i.location || "-"}</td>
-              <td>{i.reported_by || "-"}</td>
-              <td>{i.timestamp || "-"}</td>
-              <td className="space-x-2">
-                {i.id > 0 && (
-                  <>
-                    <button onClick={() => setEditingIncident(i)} className="btn-secondary">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(i.id)} className="btn-danger">
-                      Delete
-                    </button>
-                  </>
-                )}
-              </td>
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-left">
+            <tr>
+              <th className="px-4 py-3 font-medium text-gray-700">Title</th>
+              <th className="px-4 py-3 font-medium text-gray-700">Type</th>
+              <th className="px-4 py-3 font-medium text-gray-700">Status</th>
+              <th className="px-4 py-3 font-medium text-gray-700">Reported By</th>
+              <th className="px-4 py-3 font-medium text-gray-700">Date</th>
+              <th className="px-4 py-3 font-medium text-gray-700">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {!hasData && (
-        <p className="mt-4 italic text-gray-500">No incidents found. Showing placeholders.</p>
-      )}
+          </thead>
+          <tbody className="divide-y">
+            {list.map((incident) => (
+              <tr key={incident.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3">{incident.title}</td>
+                <td className="px-4 py-3">{incident.incident_type}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                    {incident.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  {incident.reported_by?.email || "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {new Date(incident.date_reported).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3 space-x-2">
+                  <button
+                    onClick={() => setEditingIncident(incident)}
+                    className="rounded-md bg-gray-200 px-3 py-1 text-xs font-medium
+                             hover:bg-gray-300"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(incident.id)}
+                    className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium
+                             text-white hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination */}
-      <div className="flex justify-between mt-4">
-        <button onClick={handlePrevPage} disabled={page === 1 || !hasData} className="btn-secondary">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => dispatch(setPage(page - 1))}
+          disabled={page === 1}
+          className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium
+                   hover:bg-gray-300 disabled:opacity-50"
+        >
           Previous
         </button>
-        <span>
+
+        <span className="text-sm text-gray-600">
           Page {page} of {totalPages}
         </span>
-        <button onClick={handleNextPage} disabled={page === totalPages || !hasData} className="btn-secondary">
+
+        <button
+          onClick={() => dispatch(setPage(page + 1))}
+          disabled={page === totalPages}
+          className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium
+                   hover:bg-gray-300 disabled:opacity-50"
+        >
           Next
         </button>
       </div>
 
-      {/* Edit Incident Modal */}
+      {/* Edit Modal */}
       {editingIncident && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="p-4 bg-white rounded w-96">
-            <h3 className="mb-2 font-bold">Edit Incident</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+            <h3 className="mb-4 text-lg font-medium text-gray-900">
+              Edit Incident
+            </h3>
+
             <input
-              type="text"
               value={editingIncident.title}
               onChange={(e) =>
-                setEditingIncident({ ...editingIncident, title: e.target.value })
+                setEditingIncident({
+                  ...editingIncident,
+                  title: e.target.value,
+                })
               }
-              className="w-full p-1 mb-2 border"
+              className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
-            <input
-              type="text"
-              value={editingIncident.description || ""}
+
+            <textarea
+              rows={3}
+              value={editingIncident.description}
               onChange={(e) =>
-                setEditingIncident({ ...editingIncident, description: e.target.value })
+                setEditingIncident({
+                  ...editingIncident,
+                  description: e.target.value,
+                })
               }
-              className="w-full p-1 mb-2 border"
+              className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
-            <input
-              type="text"
-              value={editingIncident.incident_type || ""}
-              onChange={(e) =>
-                setEditingIncident({ ...editingIncident, incident_type: e.target.value })
-              }
-              className="w-full p-1 mb-2 border"
-            />
-            <button onClick={handleUpdate} className="mr-2 btn-primary">
-              Save
-            </button>
-            <button onClick={() => setEditingIncident(null)} className="btn-secondary">
-              Cancel
-            </button>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setEditingIncident(null)}
+                className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium
+                         hover:bg-gray-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium
+                         text-white hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
+
 };
 
 export default IncidentsPage;

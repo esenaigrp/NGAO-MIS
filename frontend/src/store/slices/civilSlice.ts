@@ -1,114 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axiosInstance from "../../api/civilRegistrationApi";
+import api from "../../api/axiosClient";
 
-// -------- Async Thunks --------
 
-// Fetch all civil registrations (birth, death, marriage)
-export const fetchCivilRegistrations = createAsyncThunk(
-  "civil/fetchAll",
-  async (_, thunkAPI) => {
-    try {
-      const res = await axiosInstance.get("/registrations/");
-      // Expected backend response:
-      // { birth: [...], death: [...], marriage: [...] }
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-// -------- Birth Registration Actions --------
-export const verifyBirthParents = createAsyncThunk(
-  "civil/verifyBirthParents",
-  async ({ id, motherVerified, fatherVerified }: any, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/birth/${id}/verify_parents/`, {
-        mother_verified: motherVerified,
-        father_verified: fatherVerified,
-      });
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-export const approveBirth = createAsyncThunk(
-  "civil/approveBirth",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/birth/${id}/approve/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-export const rejectBirth = createAsyncThunk(
-  "civil/rejectBirth",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/birth/${id}/reject/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-// -------- Death Registration Actions --------
-export const approveDeath = createAsyncThunk(
-  "civil/approveDeath",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/death/${id}/approve/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-export const rejectDeath = createAsyncThunk(
-  "civil/rejectDeath",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/death/${id}/reject/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-// -------- Marriage Registration Actions --------
-export const approveMarriage = createAsyncThunk(
-  "civil/approveMarriage",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/marriage/${id}/approve/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-export const rejectMarriage = createAsyncThunk(
-  "civil/rejectMarriage",
-  async (id: string, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/marriage/${id}/reject/`);
-      return res.data;
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
-    }
-  }
-);
-
-// -------- Slice --------
 interface CivilState {
   birth: any[];
   death: any[];
@@ -127,6 +20,144 @@ const initialState: CivilState = {
   error: null,
 };
 
+// -------- Async Thunks --------
+
+// Fetch all civil registrations (birth, death, marriage)
+export const fetchBirthRegistrations = createAsyncThunk(
+  "civil/fetchAllBirths",
+  async (_, thunkAPI) => {
+    try {
+      const res = await api.get("/registrations/births/");
+      console.log("Fetch Birth Registrations Response:", res.data);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+// Fetch all civil registrations (birth, death, marriage)
+export const fetchDeathRegistrations = createAsyncThunk(
+  "civil/fetchAllDeaths",
+  async (_, thunkAPI) => {
+    try {
+      const res = await api.get("/registrations/deaths/");
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+// Fetch all civil registrations (birth, death, marriage)
+export const fetchMarriageRegistrations = createAsyncThunk(
+  "civil/fetchAllMarriages",
+  async (_, thunkAPI) => {
+    try {
+      const res = await api.get("/registrations/marriages/");
+      // Expected backend response:
+      // { birth: [...], death: [...], marriage: [...] }
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+// -------- Birth Registration Actions --------
+export const verifyBirthParents = createAsyncThunk(
+  "civil/verifyBirthParents",
+  async ({ id, motherVerified, fatherVerified }: any, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/births/${id}/verify_parents/`, {
+        mother_verified: motherVerified,
+        father_verified: fatherVerified,
+      });
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+export const approveBirth = createAsyncThunk(
+  "civil/approveBirth",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/births/${id}/approve/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+export const rejectBirth = createAsyncThunk(
+  "civil/rejectBirth",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/births/${id}/reject/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+// -------- Death Registration Actions --------
+export const approveDeath = createAsyncThunk(
+  "civil/approveDeath",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/deaths/${id}/approve/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+export const rejectDeath = createAsyncThunk(
+  "civil/rejectDeath",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/deaths/${id}/reject/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+// -------- Marriage Registration Actions --------
+export const approveMarriage = createAsyncThunk(
+  "civil/approveMarriage",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/marriages/${id}/approve/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+export const rejectMarriage = createAsyncThunk(
+  "civil/rejectMarriage",
+  async (id: string, thunkAPI) => {
+    try {
+      const res = await api.post(`/registrations/marriages/${id}/reject/`);
+      return res.data;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || "Network Error");
+    }
+  }
+);
+
+
+
+// -------- Slice --------
+
 const civilSlice = createSlice({
   name: "civil",
   initialState,
@@ -141,17 +172,41 @@ const civilSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch
-      .addCase(fetchCivilRegistrations.pending, (state) => {
+      .addCase(fetchBirthRegistrations.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchCivilRegistrations.fulfilled, (state, action) => {
+      .addCase(fetchBirthRegistrations.fulfilled, (state, action) => {
         state.loading = false;
-        state.birth = action.payload.birth;
-        state.death = action.payload.death;
-        state.marriage = action.payload.marriage;
+        state.birth = action.payload; // <-- directly assign the array
       })
-      .addCase(fetchCivilRegistrations.rejected, (state, action: any) => {
+      .addCase(fetchBirthRegistrations.rejected, (state, action: any) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchDeathRegistrations.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDeathRegistrations.fulfilled, (state, action) => {
+        state.loading = false;
+        state.death = action.payload;
+      })
+      .addCase(fetchDeathRegistrations.rejected, (state, action: any) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(fetchMarriageRegistrations.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMarriageRegistrations.fulfilled, (state, action) => {
+        state.loading = false;
+        state.marriage = action.payload;
+      })
+      .addCase(fetchMarriageRegistrations.rejected, (state, action: any) => {
         state.loading = false;
         state.error = action.payload;
       })

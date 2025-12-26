@@ -129,16 +129,19 @@ const OfficersPage: React.FC = () => {
       <div className="px-6 py-8 mx-auto max-w-7xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
+        <div>
+        <h1 className="text-2xl font-semibold text-gray-900">
             Officers Management
-          </h1>
-        </div>
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          manage officers
+        </p>
+      </div>
 
         {/* Add Officer Card */}
         <div className="mb-10 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-lg font-medium text-gray-800">
               Add New Officer
             </h2>
           </div>

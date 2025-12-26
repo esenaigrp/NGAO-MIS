@@ -5,7 +5,7 @@ import api from "../../api/axiosClient";
    TYPES
 ============================ */
 export type Incident = {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   incident_type?: string;
@@ -131,7 +131,7 @@ export const updateIncident = createAsyncThunk(
 
 export const deleteIncident = createAsyncThunk(
   "incidents/delete",
-  async (id: number, { rejectWithValue }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/incidents/${id}/`);
       return id;

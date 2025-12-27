@@ -14,12 +14,17 @@ const DashboardHome: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gray-100 font-ngao">
-      <div className="px-6 py-8 mx-auto max-w-7xl">
+    <div className="min-h-screen">
+      <div className="p-6 space-y-8">
         {/* Header */}
-        <h1 className="mb-8 text-3xl font-bold text-gray-800">
+         <div>
+        <h1 className="text-2xl font-semibold text-gray-900">
           My Operational Dashboard
         </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Overview of your assigned incidents and key performance indicators.
+        </p>
+      </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">

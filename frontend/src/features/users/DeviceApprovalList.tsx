@@ -4,15 +4,15 @@ import { fetchDevices, approveDevice } from "../../store/slices/devicesSlice";
 
 export const DeviceApprovalList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { list: devices = [], status, message } = useAppSelector(
-    (state) => state.devices
-  );
+  const { list: devices, status, message } = useAppSelector((state) => state.devices);
 
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchDevices());
     }
   }, [dispatch, status]);
+
+  console.log("devices:", devices)
 
   const handleApprove = (id: string) => {
     dispatch(approveDevice(id));
@@ -56,7 +56,7 @@ export const DeviceApprovalList: React.FC = () => {
           <tbody className="divide-y">
             {devices.map((d) => (
               <tr key={d.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">{d.device_id}</td>
+                <td className="px-4 py-3">{d.id}</td>
                 <td className="px-4 py-3">{d.user_email}</td>
                 <td className="px-4 py-3">{d.is_trusted ? "Yes" : "No"}</td>
                 <td className="px-4 py-3 space-x-2">

@@ -16,6 +16,7 @@ interface Role {
 export interface User {
   user_id?: string;
   email?: string;
+  avatar?: string;
   first_name?: string;
   last_name?: string;
   role?: Role;

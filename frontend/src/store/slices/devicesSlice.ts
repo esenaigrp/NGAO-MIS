@@ -3,7 +3,7 @@ import authApi from "../../api/authApi";
 
 interface Device {
   id: string;
-  device_id: string;
+  device_number: string;
   device_name?: string;
   user_email: string;
   is_trusted: boolean;

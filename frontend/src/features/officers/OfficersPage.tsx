@@ -52,7 +52,7 @@ const OfficersPage: React.FC = () => {
   // -----------------------
   const handleCreate = () => {
     if (!newOfficer.email) return alert("Email is required");
-    
+
     // Structure the data according to your API expectations
     const officerData = {
       user: {
@@ -69,9 +69,9 @@ const OfficersPage: React.FC = () => {
       is_active: newOfficer.is_active,
       notes: newOfficer.notes
     };
-    
+
     dispatch(createOfficer(officerData));
-    
+
     // Reset form
     setNewOfficer({
       first_name: '',
@@ -125,16 +125,16 @@ const OfficersPage: React.FC = () => {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="min-h-screen bg-gray-100 font-ngao">
-      <div className="px-6 py-8 mx-auto max-w-7xl">
+    <div className="min-h-screen">
+      <div className="p-6 space-y-8">
 
         {/* Header */}
-        <div>
+         <div>
         <h1 className="text-2xl font-semibold text-gray-900">
-            Officers Management
+          Officers Management
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          manage officers
+          Manage law enforcement officers within the system.
         </p>
       </div>
 
@@ -321,32 +321,31 @@ const OfficersPage: React.FC = () => {
 
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 text-xs font-semibold rounded ${
-                            o.is_active
+                          className={`px-2 py-1 text-xs font-semibold rounded ${o.is_active
                               ? "text-green-700 bg-green-100"
                               : "text-red-700 bg-red-100"
-                          }`}
+                            }`}
                         >
                           {o.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
 
                       <td className="px-4 py-3 space-x-2">
-                        <button 
+                        <button
                           onClick={() => setEditingOfficer(o)}
                           className="px-3 py-1 text-sm text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                         >
                           Edit
                         </button>
 
-                        <button 
+                        <button
                           onClick={() => handleToggleStatus(o)}
                           className="px-3 py-1 text-sm text-yellow-700 bg-yellow-100 rounded hover:bg-yellow-200 transition-colors"
                         >
                           Toggle
                         </button>
 
-                        <button 
+                        <button
                           onClick={() => handleDelete(o.id)}
                           className="px-3 py-1 text-sm text-red-700 bg-red-100 rounded hover:bg-red-200 transition-colors"
                         >

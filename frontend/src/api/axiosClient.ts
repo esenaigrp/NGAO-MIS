@@ -1,7 +1,7 @@
 import axios from "axios";
-import { store } from "../store";
 import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from "../auth/tokenStorage";
 import { logout } from "../store/slices/authSlice";
+import { store } from "../store/store";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8200/api";
 

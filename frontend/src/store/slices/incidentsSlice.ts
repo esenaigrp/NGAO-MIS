@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "../../api/axiosClient";
+import { User } from "./usersSlice";
 
 /* ============================
    TYPES
@@ -11,7 +12,10 @@ export type Incident = {
   incident_type?: string;
   status?: string;
   location?: any;
-  reported_by?: string;
+  reported_by?: User;
+  date_reported?: string;
+  reporter_phone?: string;
+  assigned_to?: User;
   timestamp?: string;
   reference?: string;
   category?: string;

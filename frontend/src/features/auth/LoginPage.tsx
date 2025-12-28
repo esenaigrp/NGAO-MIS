@@ -1,16 +1,13 @@
-// src/features/auth/LoginPage.tsx
 import React, { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { login } from "../../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
-import { RootState } from "../../store";
+import { RootState } from "../../store/store";
 
 const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error: reduxError, isAuthenticated, user } = useAppSelector(
-    (state: RootState) => state.auth
-  );
+  const { loading, error: reduxError, isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

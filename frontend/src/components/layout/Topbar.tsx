@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchPendingDeviceCount } from "../../store/slices/devicesSlice";
 import { logout } from "../../store/slices/authSlice";
-import { RootState } from "../../store";
+import { RootState } from "../../store/store";
 
 const Topbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

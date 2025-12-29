@@ -1,5 +1,3 @@
-# In /ngao_core/apps/accounts/views.py
-
 from rest_framework import viewsets, filters, permissions, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
@@ -369,14 +367,6 @@ class CurrentUserView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-
-
-class IncidentListView(APIView):
-    permission_classes = [IsAuthenticated, IsChiefOrAdmin]
-
-    def get(self, request):
-        area = request.user.area
-        incidents = Incident.objects.filter(area=area)
 
 
 class RegisterDeviceView(APIView):

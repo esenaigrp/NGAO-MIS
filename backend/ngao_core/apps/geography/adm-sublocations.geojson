@@ -1,0 +1,103 @@
+{
+  "type": "FeatureCollection",
+  "name": "gadm41_KEN_5",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_5": "KEN.30.06.001.01.01_1",
+        "GID_0": "KEN",
+        "COUNTRY": "Kenya",
+        "GID_1": "KEN.30_1",
+        "NAME_1": "Nairobi",
+        "GID_2": "KEN.30.06_1",
+        "NAME_2": "Langata",
+        "GID_3": "KEN.30.06.001_1",
+        "NAME_3": "Karen",
+        "GID_4": "KEN.30.06.001.01_1",
+        "NAME_4": "Karen Central Loc",
+        "NAME_5": "Bogani Sub Loc",
+        "TYPE_5": "Sub-Location",
+        "ENGTYPE_5": "Sub-Location"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.704,-1.327],[36.711,-1.327],[36.711,-1.321],[36.704,-1.321],[36.704,-1.327]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_5": "KEN.30.07.002.01.01_1",
+        "GID_0": "KEN",
+        "COUNTRY": "Kenya",
+        "GID_1": "KEN.30_1",
+        "NAME_1": "Nairobi",
+        "GID_2": "KEN.30.07_1",
+        "NAME_2": "Kibra",
+        "GID_3": "KEN.30.07.002_1",
+        "NAME_3": "Laini Saba",
+        "GID_4": "KEN.30.07.002.01_1",
+        "NAME_4": "Lindi Loc",
+        "NAME_5": "Makina North Sub Loc",
+        "TYPE_5": "Sub-Location",
+        "ENGTYPE_5": "Sub-Location"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.787,-1.314],[36.792,-1.314],[36.792,-1.309],[36.787,-1.309],[36.787,-1.314]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_5": "KEN.30.04.003.01.01_1",
+        "GID_0": "KEN",
+        "COUNTRY": "Kenya",
+        "GID_1": "KEN.30_1",
+        "NAME_1": "Nairobi",
+        "GID_2": "KEN.30.04_1",
+        "NAME_2": "Westlands",
+        "GID_3": "KEN.30.04.003_1",
+        "NAME_3": "Parklands/Highridge",
+        "GID_4": "KEN.30.04.003.01_1",
+        "NAME_4": "Highridge Loc",
+        "NAME_5": "Diamond Plaza Sub Loc",
+        "TYPE_5": "Sub-Location",
+        "ENGTYPE_5": "Sub-Location"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.818,-1.254],[36.823,-1.254],[36.823,-1.249],[36.818,-1.249],[36.818,-1.254]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "GID_5": "KEN.30.01.001.01.01_1",
+        "GID_0": "KEN",
+        "COUNTRY": "Kenya",
+        "GID_1": "KEN.30_1",
+        "NAME_1": "Nairobi",
+        "GID_2": "KEN.30.01_1",
+        "NAME_2": "Mathare",
+        "GID_3": "KEN.30.01.001_1",
+        "NAME_3": "Hospital",
+        "GID_4": "KEN.30.01.001.01_1",
+        "NAME_4": "Mathare North Loc",
+        "NAME_5": "Mathare 3A Sub Loc",
+        "TYPE_5": "Sub-Location",
+        "ENGTYPE_5": "Sub-Location"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.858,-1.257],[36.862,-1.257],[36.862,-1.252],[36.858,-1.252],[36.858,-1.257]]]
+      }
+    }
+  ]
+}

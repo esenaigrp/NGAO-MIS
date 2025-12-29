@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from ngao_core.apps.accounts.models import CustomUser
+from ngao_core.apps.accounts.serializers import UserSerializer
+from ngao_core.apps.admin_structure.serializers import AdminUnitSerializer
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Incident, Response
 
@@ -20,20 +22,11 @@ class IncidentSerializer(serializers.ModelSerializer):
     """
     Serializer for the Incident model.
     """
-    reported_by = serializers.SlugRelatedField(
-        queryset=CustomUser.objects.all(),
-        slug_field='id',
-        allow_null=True,
-        required=False,
-    )
-    location = serializers.SlugRelatedField(
-        queryset=AdminUnit.objects.all(),
-        slug_field= "user_id",
-        allow_null=True,
-        required=False,
-    )
-
+    reported_by = UserSerializer(read_only=True)
+    current_handler = UserSerializer(read_only=True)
+    location = AdminUnitSerializer(read_only=True)
     responses = ResponseSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
     reported_by_name = serializers.ReadOnlyField(source="reported_by.username")
     location_name = serializers.ReadOnlyField(source="location.name", default=None)
 
@@ -42,16 +35,20 @@ class IncidentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "user",
             "description",
-            "incident_type",
             "status",
+            "incident_type",
             "coordinates",
             "date_reported",
-            "location",
             "reported_by",
-            "reported_by_name",
+            "current_handler",
+            "reporter_phone",
+            "location",
             "location_name",
+            "reported_by_name",
             "responses",
+            "reported_at",
         ]
         read_only_fields = ("id", "date_reported")
 

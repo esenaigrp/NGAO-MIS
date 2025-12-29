@@ -191,15 +191,37 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = "__all__"
+        fields = (
+            "id",
+            "user_id",
+            "device_name",
+            "device_number",
+            "device_type",
+            "last_ip",
+            "last_login_at",
+            "is_active",
+            "is_trusted",
+            "allowed_lat",
+            "allowed_lon",
+            "allowed_radius_meters",
+            "created_at"
+        )
 
 
 class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
     device = DeviceSerializer(read_only=True)
+    requested_by = UserSerializer(read_only=True)
 
     class Meta:
         model = DeviceApprovalRequest
-        fields = "__all__"
+        fields = (
+            "id",
+            "device",
+            "status",
+            "requested_by",
+            "created_at",
+            "approved_at",
+        )
 
 
 class DeviceApprovalSerializer(serializers.ModelSerializer):

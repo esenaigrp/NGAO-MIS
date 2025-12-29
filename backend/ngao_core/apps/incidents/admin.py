@@ -5,7 +5,7 @@ from .models import Incident, Response
 
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
-    list_display = (id, "title", "incident_type", "reported_by", "date_reported")
+    list_display = ("id", "title", "incident_type", "reported_by", "date_reported")
     list_filter = ("incident_type", "date_reported")
     search_fields = ("title", "description", "reported_by__email")
     ordering = ("-date_reported",)

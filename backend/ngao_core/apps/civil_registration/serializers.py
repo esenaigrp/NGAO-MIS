@@ -5,7 +5,7 @@ from .models import (
     DeathRegistration,
     MarriageRegistration
 )
-from citizen_repo.models import Citizen
+from ngao_core.apps.citizen_repo.models import Citizen
 
 
 # ---------- Registration Request Serializer ----------

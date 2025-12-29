@@ -1,20 +1,37 @@
 import os
 import json
+from decimal import Decimal
 from collections import defaultdict
 from django.core.management.base import BaseCommand
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+from django.db import transaction
 from ngao_core.apps.geography.models import Area
 
 
 class Command(BaseCommand):
-    help = "Import NGAO Divisions (adm3.geojson) with full hierarchical NGAO codes"
+    help = "Import Sub-Counties (adm2.geojson) with hierarchical NGAO codes"
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--clear',
+            action='store_true',
+            help='Clear existing sub-counties before import'
+        )
+        parser.add_argument(
+            '--skip-boundaries',
+            action='store_true',
+            help='Skip importing boundary geometries (faster)'
+        )
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        skip_boundaries = options['skip_boundaries']
 
         # -------------------------
-        # Helpers
+        # Helper function
         # -------------------------
         def normalize(name):
+            """Normalize name for matching"""
             if not name:
                 return ""
             return (
@@ -25,16 +42,30 @@ class Command(BaseCommand):
             )
 
         # -------------------------
-        # Load parents
+        # Clear if requested
         # -------------------------
-        subcounties = {
-            normalize(sc.name): sc
-            for sc in Area.objects.filter(area_type="subcounty")
+        if options['clear']:
+            count = Area.objects.filter(area_type="sub_county").count()
+            Area.objects.filter(area_type="sub_county").delete()
+            self.stdout.write(self.style.WARNING(f"Cleared {count} existing sub-counties\n"))
+
+        # -------------------------
+        # Load parent counties
+        # -------------------------
+        counties = {
+            normalize(c.name): c
+            for c in Area.objects.filter(area_type="county")
         }
 
-        if not subcounties:
-            self.stdout.write(self.style.ERROR("No sub-counties found. Import sub-counties first."))
+        if not counties:
+            self.stdout.write(
+                self.style.ERROR("No counties found. Import counties first (level 1).")
+            )
             return
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Loaded {len(counties)} counties as parents\n")
+        )
 
         # -------------------------
         # GeoJSON path
@@ -42,12 +73,14 @@ class Command(BaseCommand):
         geojson_path = os.path.abspath(
             os.path.join(
                 os.path.dirname(__file__),
-                "..", "..", "adm3.geojson"
+                "..", "..", "adm2.geojson"
             )
         )
 
         if not os.path.exists(geojson_path):
-            self.stdout.write(self.style.ERROR(f"adm3.geojson not found at {geojson_path}"))
+            self.stdout.write(
+                self.style.ERROR(f"adm2.geojson not found at {geojson_path}")
+            )
             return
 
         self.stdout.write(self.style.SUCCESS(f"Using GeoJSON file: {geojson_path}"))
@@ -55,67 +88,154 @@ class Command(BaseCommand):
         with open(geojson_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # -------------------------
-        # Serial counters per Sub-County
-        # -------------------------
-        division_counters = defaultdict(int)
+        features = data.get("features", [])
+        self.stdout.write(f"Found {len(features)} features to import\n")
+
+        # Show sample properties
+        if features:
+            first_props = features[0]['properties']
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Sample properties: {json.dumps(first_props, indent=2)}\n"
+                )
+            )
 
         # -------------------------
-        # Import Divisions
+        # Serial counters per County
         # -------------------------
-        for feature in data["features"]:
+        subcounty_counters = defaultdict(int)
+
+        # -------------------------
+        # Import Sub-Counties
+        # -------------------------
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+
+        for idx, feature in enumerate(features, 1):
             props = feature.get("properties", {})
 
-            division_name = (
-                props.get("NAME_3")
-                or props.get("DIVISION")
-                or props.get("NAME")
-            )
-
+            # Get sub-county name (NAME_2)
             subcounty_name = (
-                props.get("NAME_2")
-                or props.get("SUBCOUNTY")
+                props.get("NAME_2") or
+                props.get("SUBCOUNTY") or
+                props.get("NAME")
             )
 
-            if not division_name or not subcounty_name:
-                self.stdout.write(self.style.WARNING("Skipping feature with missing names"))
-                continue
+            # Get parent county name (NAME_1)
+            county_name = (
+                props.get("NAME_1") or
+                props.get("COUNTY")
+            )
 
-            subcounty_key = normalize(subcounty_name)
-            subcounty = subcounties.get(subcounty_key)
-
-            if not subcounty:
+            if not subcounty_name or not county_name:
                 self.stdout.write(
-                    self.style.WARNING(f"Sub-county not found for division: {division_name}")
+                    self.style.WARNING(
+                        f"Skipping feature {idx} with missing names"
+                    )
                 )
+                error_count += 1
                 continue
 
-            # Increment serial for this sub-county
-            division_counters[subcounty.id] += 1
-            serial = division_counters[subcounty.id]
+            # Find parent county
+            county_key = normalize(county_name)
+            county = counties.get(county_key)
 
-            # Full NGAO code
-            division_code = f"{subcounty.code}-{serial:02}"
+            if not county:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"County '{county_name}' not found for sub-county: {subcounty_name}"
+                    )
+                )
+                error_count += 1
+                continue
 
-            geom = GEOSGeometry(json.dumps(feature["geometry"]))
+            # Increment serial for this county
+            subcounty_counters[county.id] += 1
+            serial = subcounty_counters[county.id]
 
-            obj, created = Area.objects.update_or_create(
-                name=division_name,
-                area_type="division",
-                parent=subcounty,
-                defaults={
-                    "code": division_code,
-                    "boundary": geom,
-                },
-            )
+            # Generate NGAO code: COUNTY_CODE-SERIAL
+            subcounty_code = f"{county.code}-{serial:02}"
 
-            if created:
-                self.stdout.write(self.style.SUCCESS(
-                    f"Created division: {division_name} ({division_code})"
-                ))
-            else:
-                self.stdout.write(self.style.SUCCESS(
-                    f"Updated division: {division_name} ({division_code})"
-                ))
+            # Process geometry
+            boundary = None
+            latitude = None
+            longitude = None
 
-        self.stdout.write(self.style.SUCCESS("Divisions import completed successfully!"))
+            if not skip_boundaries and feature.get("geometry"):
+                try:
+                    geom = GEOSGeometry(json.dumps(feature["geometry"]))
+                    
+                    if geom.geom_type == 'Polygon':
+                        boundary = MultiPolygon(geom)
+                    elif geom.geom_type == 'MultiPolygon':
+                        boundary = geom
+                    
+                    if boundary:
+                        centroid = boundary.centroid
+                        latitude = Decimal(str(centroid.y))
+                        longitude = Decimal(str(centroid.x))
+
+                except Exception as e:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Error processing geometry for {subcounty_name}: {str(e)}"
+                        )
+                    )
+
+            # Create or update sub-county
+            try:
+                obj, created = Area.objects.update_or_create(
+                    name=subcounty_name,
+                    area_type="sub_county",
+                    parent=county,
+                    defaults={
+                        "code": subcounty_code,
+                        "boundary": boundary,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                    },
+                )
+
+                if created:
+                    created_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Created: {subcounty_name} ({subcounty_code}) under {county.name}"
+                        )
+                    )
+                else:
+                    updated_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Updated: {subcounty_name} ({subcounty_code})"
+                        )
+                    )
+
+                # Progress update every 50 records
+                if idx % 50 == 0:
+                    self.stdout.write(f"Progress: {idx}/{len(features)}...")
+
+            except Exception as e:
+                error_count += 1
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Error saving {subcounty_name}: {str(e)}"
+                    )
+                )
+
+        # -------------------------
+        # Summary
+        # -------------------------
+        self.stdout.write('\n' + '='*60)
+        self.stdout.write(self.style.SUCCESS('IMPORT COMPLETED'))
+        self.stdout.write('='*60)
+        self.stdout.write(f"Created:  {created_count}")
+        self.stdout.write(f"Updated:  {updated_count}")
+        self.stdout.write(f"Errors:   {error_count}")
+        self.stdout.write(f"Total:    {created_count + updated_count}")
+        self.stdout.write('='*60)
+
+        # Show total count in database
+        total_subcounties = Area.objects.filter(area_type="sub_county").count()
+        self.stdout.write(f"\nTotal sub-counties in database: {total_subcounties}\n")

@@ -1,7 +1,11 @@
 import datetime
 import os
 from pathlib import Path
-from typing import List, Dict, Any # Added for better type hinting (optional, but good practice)
+from typing import (
+    List,
+    Dict,
+    Any,
+)  # Added for better type hinting (optional, but good practice)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -9,10 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # --- General ---
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
-ALLOWED_HOSTS: List[str] = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1").split()
+ALLOWED_HOSTS: List[str] = os.getenv(
+    "DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1"
+).split()
 
 # --- Applications ---
-INSTALLED_APPS: List[str] = [ # Use List[str] for clearer typing
+INSTALLED_APPS: List[str] = [  # Use List[str] for clearer typing
     # Django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -28,19 +34,19 @@ INSTALLED_APPS: List[str] = [ # Use List[str] for clearer typing
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     # Local apps
-    'ngao_core.apps.accounts',
-    'ngao_core.apps.admin_structure',
+    "ngao_core.apps.accounts",
+    "ngao_core.apps.admin_structure",
     # 'ngao_core.apps.audit',
     # 'ngao_core.apps.geospatial',
-    'ngao_core.apps.incidents',
+    "ngao_core.apps.incidents",
     # 'ngao_core.apps.messaging',
     # 'ngao_core.apps.reports',
-    'ngao_core.apps.civil_registration',
-    'ngao_core.apps.projects',
-    'ngao_core.apps.communications',
-    'ngao_core.apps.geography.apps.GeographyConfig',
-   'ngao_core.apps.citizen_repo',
-   'ngao_core.apps.identity_registration',
+    "ngao_core.apps.citizen_repo",
+    "ngao_core.apps.civil_registration",
+    "ngao_core.apps.projects",
+    "ngao_core.apps.communications",
+    "ngao_core.apps.geography.apps.GeographyConfig",
+    "ngao_core.apps.identity_registration",
 ]
 
 # --- GIS Libraries (Removed hardcoded assignments for better deployment) ---
@@ -93,8 +99,13 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 
 # --- Password validation (Structurally correct, but added type hint) ---
 AUTH_PASSWORD_VALIDATORS: List[Dict[str, Any]] = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -119,19 +130,25 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # --- REST Framework ---
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
 }
 
 # --- Simple JWT (Structurally correct, but added type hint and corrected USER_ID_FIELD) ---
 SIMPLE_JWT: Dict[str, Any] = {
-    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", 60))),
-    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=int(os.getenv("JWT_REFRESH_DAYS", 7))),
-    "ROTATE_REFRESH_TOKENS": True, # Recommended for security
-    "BLACKLIST_AFTER_ROTATION": True, # Requires 'rest_framework_simplejwt.token_blacklist' in INSTALLED_APPS
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(
+        minutes=int(os.getenv("JWT_ACCESS_MINUTES", 60))
+    ),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(
+        days=int(os.getenv("JWT_REFRESH_DAYS", 7))
+    ),
+    "ROTATE_REFRESH_TOKENS": True,  # Recommended for security
+    "BLACKLIST_AFTER_ROTATION": True,  # Requires 'rest_framework_simplejwt.token_blacklist' in INSTALLED_APPS
     "AUTH_HEADER_TYPES": ("Bearer",),
-    # Changed to 'id' as it's the Django default PK name. 
+    # Changed to 'id' as it's the Django default PK name.
     # Change back to 'user_id' only if your CustomUser model explicitly uses user_id as its PK field.
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
@@ -144,7 +161,9 @@ CORS_ALLOWED_ORIGINS: List[str] = [
     "http://127.0.0.1:5173",  # Vite's default port
 ]
 # For production, you will add your HTTPS domain(s) here instead of relying on CORS_ALLOW_ALL_ORIGINS.
-CORS_ALLOW_ALL_ORIGINS = False # A good pattern: allow all only in debug, use list otherwise
+CORS_ALLOW_ALL_ORIGINS = (
+    False  # A good pattern: allow all only in debug, use list otherwise
+)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -157,4 +176,4 @@ LOGGING: Dict[str, Any] = {
 }
 
 # --- Default primary key field ---
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

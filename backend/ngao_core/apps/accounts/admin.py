@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import ContactPoint, CustomUser, OfficerProfile, Role
+from .models import ContactPoint, CustomUser, Device, OfficerProfile, Role
 
 
 class OfficerProfileInline(admin.StackedInline):
@@ -72,8 +72,13 @@ class ContactPointAdmin(admin.ModelAdmin):
     list_display = ("user", "type", "value", "is_primary")
 
 
-class OfficerProfileInline(admin.StackedInline):
-    model = OfficerProfile
-    # Setting extra=0 ensures only one profile form is displayed (since it's OneToOne)
-    extra = 0
-    can_delete = False  # You don't want to delete the profile without deleting the user
+# class OfficerProfileInline(admin.StackedInline):
+#     model = OfficerProfile
+#     # Setting extra=0 ensures only one profile form is displayed (since it's OneToOne)
+#     extra = 0
+#     can_delete = False  # You don't want to delete the profile without deleting the user
+
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    list_display = ("device_name", "device_number", "last_ip", "last_login_at", "user", "approved_at")
+    search_fields = ("user__email", "device_name")

@@ -13,6 +13,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from ngao_core.apps.geography.models import Area
 
 # -------------------------
 # Validators
@@ -154,6 +155,7 @@ class OfficerProfile(models.Model):
         on_delete=models.SET_NULL,
         related_name="officers",
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL, related_name="areas" )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
     reset_otp = models.CharField(max_length=6, null=True, blank=True)

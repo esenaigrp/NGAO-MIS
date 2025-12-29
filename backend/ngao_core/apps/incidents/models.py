@@ -35,64 +35,23 @@ class Incident(models.Model):
     reporter_phone = models.CharField(max_length=20)
     title = models.CharField(max_length=255, verbose_name=_("Title of Incident"))
     description = models.TextField(verbose_name=_("Detailed Description"))
-    incident_type = models.CharField(
-        max_length=50, choices=TYPE_CHOICES, default="other"
-    )
-    area = models.ForeignKey(
-        Area,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="incidents",
-        verbose_name=_("Geographic Area"),
-    )
+    incident_type = models.CharField(max_length=50, choices=TYPE_CHOICES, default="other")
+    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents", verbose_name=_("Geographic Area"),)
     reported_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="reported")
 
     # Workflow fields
-    handlers = models.ManyToManyField(
-        CustomUser,
-        blank=True,
-        related_name="assigned_incidents",
-        verbose_name=_("Handlers"),
-    )
-    current_handler = models.ForeignKey(
-        CustomUser,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="current_incidents",
-        verbose_name=_("Current Handler"),
-    )
+    handlers = models.ManyToManyField(CustomUser, blank=True, related_name="assigned_incidents", verbose_name=_("Handlers"),)
+    current_handler = models.ForeignKey(CustomUser, null=True, blank=True, on_delete=models.SET_NULL, related_name="current_incidents", verbose_name=_("Current Handler"),)
 
     # Location & GIS
-    location = models.ForeignKey(
-        AdminUnit,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="incidents",
-        verbose_name=_("Administrative Location Unit"),
-    )
-    coordinates = gis_models.PointField(
-        default=Point(0.0, 0.0), verbose_name=_("Geospatial Coordinates")
-    )
-    date_reported = models.DateTimeField(
-        auto_now_add=True, verbose_name=_("Date Reported")
-    )
-    date_resolved = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("Date Resolved")
-    )
+    location = models.ForeignKey(AdminUnit, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents", verbose_name=_("Administrative Location Unit"),)
+    coordinates = gis_models.PointField(default=Point(0.0, 0.0), verbose_name=_("Geospatial Coordinates"))
+    date_reported = models.DateTimeField(auto_now_add=True, verbose_name=_("Date Reported"))
+    date_resolved = models.DateTimeField(null=True, blank=True, verbose_name=_("Date Resolved"))
 
     # Reporting user
-    reported_by = models.ForeignKey(
-        CustomUser,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="incidents_reported",
-        verbose_name=_("Reported By User"),
-    )
+    reported_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents_reported", verbose_name=_("Reported By User"),)
 
     class Meta:
         verbose_name = _("Incident")
@@ -121,7 +80,7 @@ class Incident(models.Model):
         if self.status in ["resolved", "closed"]:
             return
 
-        handler_list = list(self.handlers.all().order_by("user_id"))
+        handler_list = list(self.handlers.all())
         if not handler_list:
             return  # No handlers assigned
 

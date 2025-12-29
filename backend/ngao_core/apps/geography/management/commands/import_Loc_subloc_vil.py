@@ -24,6 +24,7 @@ class Command(BaseCommand):
                     "SubLoc4": ["Village5"]
                 }
             }
+            
             # Add more divisions
         }
 

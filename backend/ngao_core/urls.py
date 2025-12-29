@@ -85,7 +85,9 @@ urlpatterns = [
     path("api/citizens/", include("ngao_core.apps.citizen_repo.urls")),
     path("api/dashboard/", include("ngao_core.apps.dashboard.urls")),
 
-
+    path("api/registrations/", include("ngao_core.apps.civil_registration.urls")),
+    
+    path("api/geography/", include("ngao_core.apps.geography.urls")),
 
     # JWT helpers (optional if not already inside accounts)
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

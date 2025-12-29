@@ -10,12 +10,16 @@ import {
 } from "../../store/slices/incidentsSlice";
 import { fetchAdminUnits } from "../../store/slices/adminStructureSlice";
 import { FaChevronUp, FaChevronDown, FaSearch } from "react-icons/fa";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
+import { Area } from "../../store/slices/areasSlice";
+import IncidentMapModal from "./IncidentsMapModal";
 
 const IncidentsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { list, loading, error, page, pageSize, total } = useAppSelector((state) => state.incidents);
   const { adminUnits } = useAppSelector((state) => state.adminUnits);
   const { user } = useAppSelector((state) => state.auth);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const [editingIncident, setEditingIncident] = useState<any | null>(null);
   const [newIncident, setNewIncident] = useState<any>({
@@ -24,6 +28,7 @@ const IncidentsPage: React.FC = () => {
     incident_type: "",
     reporter_phone: "",
     location: "",
+    area: selectedAreaId
   });
 
   // const totalPages = Math.ceil(total / pageSize);
@@ -31,6 +36,9 @@ const IncidentsPage: React.FC = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const [mapOpen, setMapOpen] = useState(false);
+  const [mapIncidents, setMapIncidents] = useState<any[]>([]);
 
   useEffect(() => {
     dispatch(fetchIncidents({ page, pageSize }));
@@ -44,12 +52,14 @@ const IncidentsPage: React.FC = () => {
     }
 
     dispatch(createIncident(newIncident));
+
     setNewIncident({
       title: "",
       description: "",
       incident_type: "other",
       reporter_phone: "",
       location: "",
+      area: selectedAreaId
     });
   };
 
@@ -63,6 +73,22 @@ const IncidentsPage: React.FC = () => {
     );
     setEditingIncident(null);
   };
+
+  const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
+    setSelectedAreaId(areaId);
+    setNewIncident({ ...newIncident, area: areaId })
+  };
+
+  const openSingleIncidentMap = (incident) => {
+    setMapIncidents([incident]);
+    setMapOpen(true);
+  };
+
+  const openAllIncidentsMap = () => {
+    setMapIncidents(filteredAndSortedData);
+    setMapOpen(true);
+  };
+
 
   const handleDelete = (id: string) => {
     if (window.confirm("Delete this incident?")) {
@@ -210,26 +236,6 @@ const IncidentsPage: React.FC = () => {
             />
           </div>
 
-          {/* Admin Unit Dropdown */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Location
-            </label>
-            {/* Admin Unit Dropdown */}
-            <select
-              value={newIncident.location}
-              onChange={(e) => setNewIncident({ ...newIncident, location: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select Location ...</option>
-              {adminUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.properties.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Description */}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -250,6 +256,10 @@ const IncidentsPage: React.FC = () => {
             />
           </div>
         </div>
+        <CompactAreaSelector
+          onSelectionChange={handleAreaSelectionChange}
+          className="max-w-1xl mt-2"
+        />
 
         <div className="mt-6">
           <button
@@ -285,6 +295,14 @@ const IncidentsPage: React.FC = () => {
             />
           </div>
           <div className="flex items-center gap-2">
+            <div>
+              <button
+                onClick={openAllIncidentsMap}
+                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 cursor-pointer"
+              >
+                View All on Map
+              </button>
+            </div>
             <label className="text-sm text-gray-600">Rows per page:</label>
             <select
               value={itemsPerPage}
@@ -361,24 +379,26 @@ const IncidentsPage: React.FC = () => {
                         {incident.reported_by?.first_name} {incident.reported_by?.last_name || incident.reported_by?.email || "—"}
                       </td>
                       <td className="px-4 py-3">{incident.reporter_phone || "—"}</td>
-                      <td className="px-4 py-3">
-                        {incident.location
-                          ? `${incident.location.latitude.toFixed(4)}, ${incident.location.longitude.toFixed(4)}`
-                          : "—"}
-                      </td>
+                      <td className="px-4 py-3">{incident?.area?.name}</td>
                       <td className="px-4 py-3">
                         {new Date(incident.date_reported).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 space-x-2">
                         <button
+                          onClick={() => openSingleIncidentMap(incident)}
+                          className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 cursor-pointer"
+                        >
+                          View
+                        </button>
+                        <button
                           onClick={() => setEditingIncident(incident)}
-                          className="rounded-md bg-gray-200 px-3 py-1 text-xs font-medium hover:bg-gray-300"
+                          className="rounded-md bg-gray-200 px-3 py-1 text-xs font-medium hover:bg-gray-300 cursor-pointer"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(incident.id)}
-                          className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                          className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 cursor-pointer"
                         >
                           Delete
                         </button>
@@ -486,6 +506,13 @@ const IncidentsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {mapOpen && (
+        <IncidentMapModal
+          incidents={mapIncidents}
+          onClose={() => setMapOpen(false)}
+        />
       )}
     </div>
   );

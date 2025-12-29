@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "../../api/axiosClient";
 import { User } from "./usersSlice";
+import { Area } from "./areasSlice";
 
 /* ============================
    TYPES
@@ -12,6 +13,7 @@ export type Incident = {
   incident_type?: string;
   status?: string;
   location?: any;
+  area?: Area;
   reported_by?: User;
   date_reported?: string;
   reporter_phone?: string;
@@ -20,6 +22,8 @@ export type Incident = {
   reference?: string;
   category?: string;
   priority?: string;
+  coordinates: any;
+  notes: string;
 };
 
 interface IncidentsState {

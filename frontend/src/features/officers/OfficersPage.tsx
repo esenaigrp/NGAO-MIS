@@ -78,7 +78,8 @@ const OfficersPage: React.FC = () => {
       office_email: newOfficer.office_email,
       admin_unit: newOfficer.admin_unit,
       is_active: newOfficer.is_active,
-      notes: newOfficer.notes
+      notes: newOfficer.notes,
+      area: selectedAreaId
     };
 
     dispatch(createOfficer(officerData));
@@ -130,10 +131,8 @@ const OfficersPage: React.FC = () => {
     setAdminUnitInput("");
   };
 
-   const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
+  const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
     setSelectedAreaId(areaId);
-    console.log("Area Selected:", areaId, area);
-    // This will ONLY fire when a sub county is actually selected
   };
 
   // Sorting function

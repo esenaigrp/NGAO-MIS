@@ -163,134 +163,136 @@ const DashboardHome: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="py-2">
             <h2 className="text-xl font-semibold text-gray-800">
-              Assigned Incidents
+              Assigned Incidents ({list.length})
             </h2>
           </div>
-          {/* Search Bar */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <FaSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search incidents..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="overflow-x-auto space-y-4">
+            {/* Search Bar */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
+                <FaSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search incidents..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Rows per page:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Rows per page:</label>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-          </div>
 
-          {/* Table */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-left">
-                  <tr>
-                    <th
-                      onClick={() => handleSort('title')}
-                      className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      Title <SortIcon columnKey="title" />
-                    </th>
-                    <th
-                      onClick={() => handleSort('incident_type')}
-                      className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      Type <SortIcon columnKey="incident_type" />
-                    </th>
-                    <th
-                      onClick={() => handleSort('status')}
-                      className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      Status <SortIcon columnKey="status" />
-                    </th>
-                    <th
-                      onClick={() => handleSort('reported_by')}
-                      className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      Reported By <SortIcon columnKey="reported_by" />
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-700">Reporter Phone</th>
-                    <th className="px-4 py-3 font-medium text-gray-700">Location</th>
-                    <th
-                      onClick={() => handleSort('date_reported')}
-                      className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      Date <SortIcon columnKey="date_reported" />
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((incident) => (
-                      <tr key={incident.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium">{incident.title}</td>
-                        <td className="px-4 py-3">{incident.incident_type}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${incident.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                            incident.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                            {incident.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {incident.reported_by?.first_name} {incident.reported_by?.last_name || incident.reported_by?.email || "—"}
-                        </td>
-                        <td className="px-4 py-3">{incident.reporter_phone || "—"}</td>
-                        <td className="px-4 py-3">
-                          {incident.location
-                            ? `${incident.location.latitude.toFixed(4)}, ${incident.location.longitude.toFixed(4)}`
-                            : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {new Date(incident.date_reported).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 space-x-2">
-                          <button
-                            onClick={() => setEditingIncident(incident)}
-                            className="rounded-md bg-gray-200 px-3 py-1 text-xs font-medium hover:bg-gray-300"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(incident.id)}
-                            className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
+            {/* Table */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th
+                        onClick={() => handleSort('title')}
+                        className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Title <SortIcon columnKey="title" />
+                      </th>
+                      <th
+                        onClick={() => handleSort('incident_type')}
+                        className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Type <SortIcon columnKey="incident_type" />
+                      </th>
+                      <th
+                        onClick={() => handleSort('status')}
+                        className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Status <SortIcon columnKey="status" />
+                      </th>
+                      <th
+                        onClick={() => handleSort('reported_by')}
+                        className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Reported By <SortIcon columnKey="reported_by" />
+                      </th>
+                      <th className="px-4 py-3 font-medium text-gray-700">Reporter Phone</th>
+                      <th className="px-4 py-3 font-medium text-gray-700">Location</th>
+                      <th
+                        onClick={() => handleSort('date_reported')}
+                        className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
+                      >
+                        Date <SortIcon columnKey="date_reported" />
+                      </th>
+                      <th className="px-4 py-3 font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((incident) => (
+                        <tr key={incident.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium">{incident.title}</td>
+                          <td className="px-4 py-3">{incident.incident_type}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${incident.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                              incident.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                              {incident.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {incident.reported_by?.first_name} {incident.reported_by?.last_name || incident.reported_by?.email || "—"}
+                          </td>
+                          <td className="px-4 py-3">{incident.reporter_phone || "—"}</td>
+                          <td className="px-4 py-3">
+                            {incident.location
+                              ? `${incident.location.latitude.toFixed(4)}, ${incident.location.longitude.toFixed(4)}`
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {new Date(incident.date_reported).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 space-x-2">
+                            <button
+                              onClick={() => setEditingIncident(incident)}
+                              className="rounded-md bg-gray-200 px-3 py-1 text-xs font-medium hover:bg-gray-300"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(incident.id)}
+                              className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                          No incidents found
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                        No incidents found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 

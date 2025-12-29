@@ -8,6 +8,7 @@ import devicesReducer from "./slices/devicesSlice";
 import officersReducer from "./slices/officersSlice";
 import civilReducer from "./slices/civilSlice";
 import adminUnitsReducer from "./slices/adminStructureSlice";
+import citizenReducer from "./slices/citizenSlice";
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +20,8 @@ export const store = configureStore({
     devices: devicesReducer,
     officers: officersReducer,
     civil: civilReducer,
-    adminUnits: adminUnitsReducer
+    adminUnits: adminUnitsReducer,
+    citizens: citizenReducer
   },
 });
 

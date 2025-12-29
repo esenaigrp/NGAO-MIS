@@ -1,7 +1,6 @@
-// src/store/slices/citizenSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 import { RootState } from "../store";
+import api from "../../api/axiosClient";
 
 // Citizen type
 export interface Citizen {
@@ -53,10 +52,26 @@ export const fetchCitizens = createAsyncThunk<
     const state = thunkAPI.getState() as RootState;
     const token = state.auth.accessToken;
 
-    const response = await axios.get("/api/civil_registration/citizens/", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.get("/citizens/");
+    console.log("Response.data:", response.data);
+    return response.data;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to fetch citizens");
+  }
+});
 
+// Lookup citizens
+export const lookupCitizens = createAsyncThunk<
+  Citizen[],
+  void,
+  { rejectValue: string }
+>("citizen/lookupCitizens", async (_, thunkAPI) => {
+  try {
+    const state = thunkAPI.getState() as RootState;
+    const token = state.auth.accessToken;
+
+    const response = await api.post("/citizens/lookup/");
+    console.log("Response.data:", response.data);
     return response.data;
   } catch (err: any) {
     return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to fetch citizens");
@@ -73,9 +88,7 @@ export const createCitizen = createAsyncThunk<
     const state = thunkAPI.getState() as RootState;
     const token = state.auth.accessToken;
 
-    const response = await axios.post("/api/civil_registration/citizens/", data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.post("/citizens/", data);
 
     return response.data;
   } catch (err: any) {

@@ -14,6 +14,9 @@ import {
 } from "../../store/slices/officersSlice";
 import { fetchAdminUnits } from "../../store/slices/adminStructureSlice";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
+import { Area } from "../../store/slices/areasSlice";
+
 
 const OfficersPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -21,6 +24,8 @@ const OfficersPage: React.FC = () => {
   const { adminUnits } = useAppSelector((state) => state.adminUnits);
 
   const [editingOfficer, setEditingOfficer] = useState<Officer | null>(null);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+
   const [newOfficer, setNewOfficer] = useState({
     first_name: '',
     last_name: '',
@@ -33,10 +38,12 @@ const OfficersPage: React.FC = () => {
     office_email: '',
     admin_unit: '',
     is_active: true,
-    notes: ''
+    notes: '',
+    area: selectedAreaId
   });
   const [roleInput, setRoleInput] = useState("");
   const [adminUnitInput, setAdminUnitInput] = useState("");
+
 
   // const totalPages = Math.ceil(total / pageSize);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,12 +54,10 @@ const OfficersPage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchOfficers());
     dispatch(fetchAdminUnits());
-
     return () => {
       dispatch(clearOfficers());
     };
   }, [dispatch]);
-
   // -----------------------
   // Handlers
   // -----------------------
@@ -91,7 +96,8 @@ const OfficersPage: React.FC = () => {
       office_email: '',
       admin_unit: '',
       is_active: true,
-      notes: ''
+      notes: '',
+      area: selectedAreaId
     });
 
   };
@@ -124,6 +130,12 @@ const OfficersPage: React.FC = () => {
     setAdminUnitInput("");
   };
 
+   const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
+    setSelectedAreaId(areaId);
+    console.log("Area Selected:", areaId, area);
+    // This will ONLY fire when a sub county is actually selected
+  };
+
   // Sorting function
   const handleSort = (key) => {
     let direction = 'asc';
@@ -134,80 +146,80 @@ const OfficersPage: React.FC = () => {
   };
 
   // Filter and sort data
- const filteredAndSortedData = useMemo(() => {
-  const searchLower = searchTerm.toLowerCase();
+  const filteredAndSortedData = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
 
-  const filtered = officers.filter((officer) => {
-    const firstName = officer.user?.first_name || "";
-    const lastName = officer.user?.last_name || "";
-    const email = officer.user?.email || "";
-    const badge = officer.badge_number || "";
-    const idNumber = officer.id_number || "";
+    const filtered = officers.filter((officer) => {
+      const firstName = officer.user?.first_name || "";
+      const lastName = officer.user?.last_name || "";
+      const email = officer.user?.email || "";
+      const badge = officer.badge_number || "";
+      const idNumber = officer.id_number || "";
 
-    return (
-      firstName.toLowerCase().includes(searchLower) ||
-      lastName.toLowerCase().includes(searchLower) ||
-      email.toLowerCase().includes(searchLower) ||
-      badge.toLowerCase().includes(searchLower) ||
-      idNumber.toLowerCase().includes(searchLower) ||
-      `${firstName} ${lastName}`.toLowerCase().includes(searchLower)
-    );
-  });
+      return (
+        firstName.toLowerCase().includes(searchLower) ||
+        lastName.toLowerCase().includes(searchLower) ||
+        email.toLowerCase().includes(searchLower) ||
+        badge.toLowerCase().includes(searchLower) ||
+        idNumber.toLowerCase().includes(searchLower) ||
+        `${firstName} ${lastName}`.toLowerCase().includes(searchLower)
+      );
+    });
 
-  if (!sortConfig.key) return filtered;
+    if (!sortConfig.key) return filtered;
 
-  return [...filtered].sort((a, b) => {
-    let aVal = "";
-    let bVal = "";
+    return [...filtered].sort((a, b) => {
+      let aVal = "";
+      let bVal = "";
 
-    switch (sortConfig.key) {
-      case "name":
-        aVal = `${a.user?.first_name || ""} ${a.user?.last_name || ""}`;
-        bVal = `${b.user?.first_name || ""} ${b.user?.last_name || ""}`;
-        break;
+      switch (sortConfig.key) {
+        case "name":
+          aVal = `${a.user?.first_name || ""} ${a.user?.last_name || ""}`;
+          bVal = `${b.user?.first_name || ""} ${b.user?.last_name || ""}`;
+          break;
 
-      case "email":
-        aVal = a.user?.email || "";
-        bVal = b.user?.email || "";
-        break;
+        case "email":
+          aVal = a.user?.email || "";
+          bVal = b.user?.email || "";
+          break;
 
-      case "badge_number":
-        aVal = a.badge_number || "";
-        bVal = b.badge_number || "";
-        break;
+        case "badge_number":
+          aVal = a.badge_number || "";
+          bVal = b.badge_number || "";
+          break;
 
-      case "id_number":
-        aVal = a.id_number || "";
-        bVal = b.id_number || "";
-        break;
+        case "id_number":
+          aVal = a.id_number || "";
+          bVal = b.id_number || "";
+          break;
 
-      case "status":
-        aVal = a.is_active ? "active" : "inactive";
-        bVal = b.is_active ? "active" : "inactive";
-        break;
+        case "status":
+          aVal = a.is_active ? "active" : "inactive";
+          bVal = b.is_active ? "active" : "inactive";
+          break;
 
-      case "admin_unit":
-        aVal = typeof a.admin_unit === "string"
-          ? adminUnits.find(u => u.id === a.admin_unit)?.name || ""
-          : a.admin_unit?.name || "";
-        bVal = typeof b.admin_unit === "string"
-          ? adminUnits.find(u => u.id === b.admin_unit)?.name || ""
-          : b.admin_unit?.name || "";
-        break;
+        case "admin_unit":
+          aVal = typeof a.admin_unit === "string"
+            ? adminUnits.find(u => u.id === a.admin_unit)?.name || ""
+            : a.admin_unit?.name || "";
+          bVal = typeof b.admin_unit === "string"
+            ? adminUnits.find(u => u.id === b.admin_unit)?.name || ""
+            : b.admin_unit?.name || "";
+          break;
 
-      default:
-        aVal = String((a as any)[sortConfig.key] ?? "");
-        bVal = String((b as any)[sortConfig.key] ?? "");
-    }
+        default:
+          aVal = String((a as any)[sortConfig.key] ?? "");
+          bVal = String((b as any)[sortConfig.key] ?? "");
+      }
 
-    aVal = aVal.toLowerCase();
-    bVal = bVal.toLowerCase();
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
 
-    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
-}, [officers, searchTerm, sortConfig]);
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [officers, searchTerm, sortConfig]);
 
 
   // Pagination
@@ -356,6 +368,10 @@ const OfficersPage: React.FC = () => {
                 </label>
               </div>
             </div>
+            <CompactAreaSelector
+              onSelectionChange={handleAreaSelectionChange}
+              className="max-w-1xl mt-2"
+            />
 
             {/* Submit Button */}
             <div className="mt-6">
@@ -378,14 +394,13 @@ const OfficersPage: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto p-6 space-y-4">
-        
             {/* Search Bar */}
             <div className="flex items-center justify-between gap-4">
               <div className="relative flex-1 max-w-md">
                 <FaSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search incidents..."
+                  placeholder="Search officers..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);

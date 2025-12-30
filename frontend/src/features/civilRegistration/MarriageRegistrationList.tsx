@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchMarriageRegistrations, approveMarriage, rejectMarriage, createMarriage, updateMarriage, deleteMarriage } from "../../store/slices/civilSlice";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
+import { Area } from "../../store/slices/areasSlice";
+import CitizenAutocomplete from "./CitizenAutoComplete";
 
-interface MarriageForm {
+interface MarriageInputForm {
   spouse_1: string;
   spouse_2: string;
   date_of_marriage: string;
@@ -12,6 +15,9 @@ interface MarriageForm {
   reference_number: string;
   status: "submitted" | "approved" | "rejected" | string;
   approved_at?: string;
+  area?: string;
+  husband_display?: string,
+  wife_display?: string,
 }
 
 const MarriageRegistrationList: React.FC = () => {
@@ -19,7 +25,7 @@ const MarriageRegistrationList: React.FC = () => {
   const { marriage, loading, error } = useAppSelector((state) => state.civil);
   const { citizens } = useAppSelector((state) => state.citizens);
 
-  const [newMarriage, setNewMarriage] = useState<MarriageForm>({
+  const [newMarriage, setNewMarriage] = useState<MarriageInputForm>({
     spouse_1: "",
     spouse_2: "",
     date_of_marriage: "",
@@ -28,13 +34,17 @@ const MarriageRegistrationList: React.FC = () => {
     reference_number: "",
     status: "submitted",
     approved_at: "",
+    area: "",
+    husband_display: "",
+    wife_display: "",
   });
 
-  const [editingMarriage, setEditingMarriage] = useState<MarriageForm | null>(null);
+  const [editingMarriage, setEditingMarriage] = useState<MarriageInputForm | null>(null);
   const [spouse1Search, setSpouse1Search] = useState("");
   const [spouse2Search, setSpouse2Search] = useState("");
   const [editSpouse1Search, setEditSpouse1Search] = useState("");
   const [editSpouse2Search, setEditSpouse2Search] = useState("");
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   // const totalPages = Math.ceil(total / pageSize);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,12 +61,15 @@ const MarriageRegistrationList: React.FC = () => {
     setNewMarriage({
       spouse_1: "",
       spouse_2: "",
+      husband_display: "",
+      wife_display: "",
       date_of_marriage: "",
       place_of_marriage: "",
       initiated_by: "",
       reference_number: "",
       status: "submitted",
       approved_at: "",
+      area: selectedAreaId
     });
     setSpouse1Search("");
     setSpouse2Search("");
@@ -72,6 +85,11 @@ const MarriageRegistrationList: React.FC = () => {
     if (window.confirm("Delete this record?")) {
       dispatch(deleteMarriage(id));
     }
+  };
+
+  const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
+    setSelectedAreaId(areaId);
+    setNewMarriage({ ...newMarriage, area: areaId })
   };
 
   // Sorting function
@@ -167,60 +185,26 @@ const MarriageRegistrationList: React.FC = () => {
         <h2 className="mb-4 text-lg font-medium text-gray-900">Register Marriage</h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Spouse 1 */}
+          {/* Spouse 1 - Husband */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Spouse 1</label>
-            <input
-              type="text"
-              placeholder="Search Spouse 1..."
-              value={spouse1Search}
-              onChange={(e) => setSpouse1Search(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <CitizenAutocomplete
+              label="Husband"
+              placeholder="Search by name or ID number"
+              value={newMarriage.husband_display}
+              onSelect={(id, display) => setNewMarriage({ ...newMarriage, spouse_1: id, husband_display: display })}
+              required
             />
-            <select
-              value={newMarriage.spouse_1}
-              onChange={(e) => setNewMarriage({ ...newMarriage, spouse_1: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Spouse 1</option>
-              {citizens
-                .filter((c) => c.name.toLowerCase().includes(spouse1Search.toLowerCase()))
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.national_id})
-                  </option>
-                ))}
-            </select>
           </div>
 
-          {/* Spouse 2 */}
+          {/* Spouse 2 - Wife */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Spouse 2</label>
-            <input
-              type="text"
-              placeholder="Search Spouse 2..."
-              value={spouse2Search}
-              onChange={(e) => setSpouse2Search(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+             <CitizenAutocomplete
+              label="Wife"
+              placeholder="Search by name or ID number"
+              value={newMarriage.wife_display}
+              onSelect={(id, display) => setNewMarriage({ ...newMarriage, spouse_2: id, wife_display: display })}
+              required
             />
-            <select
-              value={newMarriage.spouse_2}
-              onChange={(e) => setNewMarriage({ ...newMarriage, spouse_2: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Spouse 2</option>
-              {citizens
-                .filter((c) => c.name.toLowerCase().includes(spouse2Search.toLowerCase()))
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.national_id})
-                  </option>
-                ))}
-            </select>
           </div>
 
           {/* Other Fields */}
@@ -236,7 +220,7 @@ const MarriageRegistrationList: React.FC = () => {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Place of Marriage</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Place/Venue of Marriage</label>
             <input
               type="text"
               value={newMarriage.place_of_marriage}
@@ -247,7 +231,7 @@ const MarriageRegistrationList: React.FC = () => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Initiated By</label>
             <input
               type="text"
@@ -294,8 +278,12 @@ const MarriageRegistrationList: React.FC = () => {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
         </div>
+        <CompactAreaSelector
+          onSelectionChange={handleAreaSelectionChange}
+          className="max-w-1xl mt-2"
+        />
 
         <div className="mt-6">
           <button

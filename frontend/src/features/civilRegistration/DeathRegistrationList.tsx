@@ -3,9 +3,13 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchDeathRegistrations, approveDeath, rejectDeath, createDeath, updateDeath, deleteDeath } from "../../store/slices/civilSlice";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
 import { fetchCitizens } from "../../store/slices/citizenSlice";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
+import { Area } from "../../store/slices/areasSlice";
+import CitizenAutocomplete from "./CitizenAutoComplete";
 
 interface DeathRecordForm {
   citizen: string;
+  citizen_display: string;
   date_of_death: string;
   place_of_death: string;
   cause_of_death: string;
@@ -13,6 +17,7 @@ interface DeathRecordForm {
   reference_number: string;
   status: "submitted" | "approved" | "rejected";
   approved_at?: string;
+  area?: string;
 }
 
 const DeathRegistrationList: React.FC = () => {
@@ -29,11 +34,13 @@ const DeathRegistrationList: React.FC = () => {
     reference_number: "",
     status: "submitted",
     approved_at: "",
+    citizen_display: ""
   });
 
   const [editingDeath, setEditingDeath] = useState<DeathRecordForm | null>(null);
   const [citizenSearch, setCitizenSearch] = useState("");
   const [editCitizenSearch, setEditCitizenSearch] = useState("");
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   // const totalPages = Math.ceil(total / pageSize);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +64,8 @@ const DeathRegistrationList: React.FC = () => {
       reference_number: "",
       status: "submitted",
       approved_at: "",
+      citizen_display: "",
+      area: selectedAreaId
     });
     setCitizenSearch("");
   };
@@ -73,6 +82,11 @@ const DeathRegistrationList: React.FC = () => {
     if (window.confirm("Delete this record?")) {
       dispatch(deleteDeath(id));
     }
+  };
+
+  const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
+    setSelectedAreaId(areaId);
+    setNewDeath({ ...newDeath, area: areaId })
   };
 
   // Sorting function
@@ -166,32 +180,14 @@ const DeathRegistrationList: React.FC = () => {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-medium text-gray-900">Register Death</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Citizen Dropdown with Search */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Citizen</label>
-            <input
-              type="text"
-              placeholder="Search citizen..."
-              value={citizenSearch}
-              onChange={(e) => setCitizenSearch(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <CitizenAutocomplete
+              label="Deceased"
+              placeholder="Search by name or ID number"
+              value={newDeath.citizen_display}
+              onSelect={(id, display) => setNewDeath({ ...newDeath, citizen: id, citizen_display: display })}
+              required
             />
-            <select
-              value={newDeath.citizen}
-              onChange={(e) => setNewDeath({ ...newDeath, citizen: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select citizen</option>
-              {citizens
-                .filter((c) => c.name.toLowerCase().includes(citizenSearch.toLowerCase()))
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
           </div>
 
           {/* Other Fields */}
@@ -230,31 +226,7 @@ const DeathRegistrationList: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Initiated By</label>
-            <input
-              type="text"
-              value={newDeath.initiated_by}
-              onChange={(e) => setNewDeath({ ...newDeath, initiated_by: e.target.value })}
-              placeholder="User initiating record"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Reference Number</label>
-            <input
-              type="text"
-              value={newDeath.reference_number}
-              onChange={(e) => setNewDeath({ ...newDeath, reference_number: e.target.value })}
-              placeholder="Unique reference"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
+          {/* <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
             <select
               value={newDeath.status}
@@ -266,9 +238,9 @@ const DeathRegistrationList: React.FC = () => {
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Approved At</label>
             <input
               type="datetime-local"
@@ -277,8 +249,13 @@ const DeathRegistrationList: React.FC = () => {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
         </div>
+
+        <CompactAreaSelector
+          onSelectionChange={handleAreaSelectionChange}
+          className="max-w-1xl mt-2"
+        />
 
         <div className="mt-6">
           <button

@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import api from "../../api/axiosClient";
+import { Area } from "./areasSlice";
 
 // Citizen type
 export interface Citizen {
   id: string;
   first_name: string;
+  middle_name?: string;
   last_name: string;
   id_number?: string;
   gender?: string;
@@ -15,27 +17,32 @@ export interface Citizen {
   location?: string;
   sublocation?: string;
   village?: string;
+  phone_number?: string;
+  email?: string;
+  area?: string;
+  status?: string;
   [key: string]: any;
+  current_area: Area
 }
 
 interface CitizenState {
   citizens: Citizen[];
   loading: boolean;
   error: string | null;
-  birth: Citizen[];
-  death: Citizen[];
-  marriage: Citizen[];
-  currentItem?: Citizen;
+  currentItem: Citizen | null;
+  total: number;
+  pageSize: number;
+  currentPage: number;
 }
 
 const initialState: CitizenState = {
   citizens: [],
   loading: false,
   error: null,
-  birth: [],
-  death: [],
-  marriage: [],
-  currentItem: {} as Citizen,
+  currentItem: null,
+  total: 0,
+  pageSize: 10,
+  currentPage: 1,
 };
 
 // ---------------------
@@ -44,37 +51,58 @@ const initialState: CitizenState = {
 
 // Fetch citizens (filtered by backend RBAC)
 export const fetchCitizens = createAsyncThunk<
-  Citizen[],
-  void,
+  { results: Citizen[]; count: number },
+  { page?: number; pageSize?: number } | void,
   { rejectValue: string }
->("citizen/fetchCitizens", async (_, thunkAPI) => {
+>("citizen/fetchCitizens", async (params, thunkAPI) => {
   try {
-    const state = thunkAPI.getState() as RootState;
-    const token = state.auth.accessToken;
+    const page = params && 'page' in params ? params.page : 1;
+    const pageSize = params && 'pageSize' in params ? params.pageSize : 10;
 
-    const response = await api.get("/citizens/");
-    console.log("Response.data:", response.data);
-    return response.data;
+    const response = await api.get("/citizens/", {
+      params: { page, page_size: pageSize },
+    });
+    
+    return {
+      results: response.data.results || response.data,
+      count: response.data.count || response.data.length,
+    };
   } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to fetch citizens");
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to fetch citizens"
+    );
   }
 });
 
-// Lookup citizens
+// Lookup citizens (for autocomplete)
 export const lookupCitizens = createAsyncThunk<
   Citizen[],
-  void,
+  { query: string },
   { rejectValue: string }
->("citizen/lookupCitizens", async (_, thunkAPI) => {
+>("citizen/lookupCitizens", async ({ query }, thunkAPI) => {
   try {
-    const state = thunkAPI.getState() as RootState;
-    const token = state.auth.accessToken;
+    const response = await api.post("/citizens/lookup/", { query });
+    return response.data.results || [];
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to lookup citizens"
+    );
+  }
+});
 
-    const response = await api.post("/citizens/lookup/");
-    console.log("Response.data:", response.data);
+// Get single citizen by ID
+export const getCitizenById = createAsyncThunk<
+  Citizen,
+  string,
+  { rejectValue: string }
+>("citizen/getCitizenById", async (id, thunkAPI) => {
+  try {
+    const response = await api.get(`/citizens/${id}/`);
     return response.data;
   } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to fetch citizens");
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to fetch citizen"
+    );
   }
 });
 
@@ -85,14 +113,84 @@ export const createCitizen = createAsyncThunk<
   { rejectValue: string }
 >("citizen/createCitizen", async (data, thunkAPI) => {
   try {
-    const state = thunkAPI.getState() as RootState;
-    const token = state.auth.accessToken;
-
     const response = await api.post("/citizens/", data);
-
     return response.data;
   } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.detail || "Failed to create citizen");
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to create citizen"
+    );
+  }
+});
+
+// Update a citizen
+export const updateCitizen = createAsyncThunk<
+  Citizen,
+  { id: string; data: Partial<Citizen> },
+  { rejectValue: string }
+>("citizen/updateCitizen", async ({ id, data }, thunkAPI) => {
+  try {
+    const response = await api.patch(`/citizens/${id}/`, data);
+    return response.data;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to update citizen"
+    );
+  }
+});
+
+// Delete a citizen
+export const deleteCitizen = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: string }
+>("citizen/deleteCitizen", async (id, thunkAPI) => {
+  try {
+    await api.delete(`/citizens/${id}/`);
+    return id;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to delete citizen"
+    );
+  }
+});
+
+// Verify citizen (IPRS-style verification)
+export const verifyCitizen = createAsyncThunk<
+  Citizen,
+  { id_number: string; last_name: string },
+  { rejectValue: string }
+>("citizen/verifyCitizen", async ({ id_number, last_name }, thunkAPI) => {
+  try {
+    const response = await api.post("/citizens/lookup/", {
+      id_number,
+      last_name,
+      module: "verification",
+    });
+    return response.data.results[0] || response.data;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Citizen verification failed"
+    );
+  }
+});
+
+// Bulk import citizens
+export const bulkImportCitizens = createAsyncThunk<
+  { success: number; failed: number; message: string },
+  FormData,
+  { rejectValue: string }
+>("citizen/bulkImportCitizens", async (formData, thunkAPI) => {
+  try {
+    const response = await api.post("/citizens/bulk-import/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.response?.data?.detail || "Failed to import citizens"
+    );
   }
 });
 
@@ -106,37 +204,166 @@ const citizenSlice = createSlice({
     clearCitizenError: (state) => {
       state.error = null;
     },
+    setCurrentCitizen: (state, action: PayloadAction<Citizen | null>) => {
+      state.currentItem = action.payload;
+    },
+    clearCurrentCitizen: (state) => {
+      state.currentItem = null;
+    },
+    setCurrentPage: (state, action: PayloadAction<number>) => {
+      state.currentPage = action.payload;
+    },
+    setPageSize: (state, action: PayloadAction<number>) => {
+      state.pageSize = action.payload;
+    },
+    clearCitizens: (state) => {
+      state.citizens = [];
+      state.total = 0;
+      state.currentPage = 1;
+    },
   },
   extraReducers: (builder) => {
-    // FETCH
-    builder.addCase(fetchCitizens.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(fetchCitizens.fulfilled, (state, action: PayloadAction<Citizen[]>) => {
-      state.loading = false;
-      state.citizens = action.payload;
-    });
-    builder.addCase(fetchCitizens.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload || "Failed to fetch citizens";
-    });
+    // FETCH CITIZENS
+    builder
+      .addCase(fetchCitizens.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCitizens.fulfilled, (state, action) => {
+        state.loading = false;
+        state.citizens = action.payload.results;
+        state.total = action.payload.count;
+      })
+      .addCase(fetchCitizens.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch citizens";
+      });
 
-    // CREATE
-    builder.addCase(createCitizen.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(createCitizen.fulfilled, (state, action: PayloadAction<Citizen>) => {
-      state.loading = false;
-      state.citizens.push(action.payload);
-    });
-    builder.addCase(createCitizen.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload || "Failed to create citizen";
-    });
+    // LOOKUP CITIZENS
+    builder
+      .addCase(lookupCitizens.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(lookupCitizens.fulfilled, (state, action) => {
+        state.loading = false;
+        state.citizens = action.payload;
+      })
+      .addCase(lookupCitizens.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to lookup citizens";
+      });
+
+    // GET CITIZEN BY ID
+    builder
+      .addCase(getCitizenById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getCitizenById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentItem = action.payload;
+      })
+      .addCase(getCitizenById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch citizen";
+      });
+
+    // CREATE CITIZEN
+    builder
+      .addCase(createCitizen.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createCitizen.fulfilled, (state, action) => {
+        state.loading = false;
+        state.citizens.push(action.payload);
+        state.total += 1;
+      })
+      .addCase(createCitizen.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to create citizen";
+      });
+
+    // UPDATE CITIZEN
+    builder
+      .addCase(updateCitizen.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCitizen.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.citizens.findIndex((c) => c.id === action.payload.id);
+        if (index !== -1) {
+          state.citizens[index] = action.payload;
+        }
+        if (state.currentItem?.id === action.payload.id) {
+          state.currentItem = action.payload;
+        }
+      })
+      .addCase(updateCitizen.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to update citizen";
+      });
+
+    // DELETE CITIZEN
+    builder
+      .addCase(deleteCitizen.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCitizen.fulfilled, (state, action) => {
+        state.loading = false;
+        state.citizens = state.citizens.filter((c) => c.id !== action.payload);
+        state.total -= 1;
+        if (state.currentItem?.id === action.payload) {
+          state.currentItem = null;
+        }
+      })
+      .addCase(deleteCitizen.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to delete citizen";
+      });
+
+    // VERIFY CITIZEN
+    builder
+      .addCase(verifyCitizen.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyCitizen.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentItem = action.payload;
+      })
+      .addCase(verifyCitizen.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Verification failed";
+      });
+
+    // BULK IMPORT CITIZENS
+    builder
+      .addCase(bulkImportCitizens.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(bulkImportCitizens.fulfilled, (state, action) => {
+        state.loading = false;
+        // Optionally refetch citizens after bulk import
+      })
+      .addCase(bulkImportCitizens.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to import citizens";
+      });
   },
 });
 
-export const { clearCitizenError } = citizenSlice.actions;
+export const {
+  clearCitizenError,
+  setCurrentCitizen,
+  clearCurrentCitizen,
+  setCurrentPage,
+  setPageSize,
+  clearCitizens,
+} = citizenSlice.actions;
+
 export default citizenSlice.reducer;

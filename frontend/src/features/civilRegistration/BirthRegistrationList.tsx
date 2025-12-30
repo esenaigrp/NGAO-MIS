@@ -13,27 +13,36 @@ import {
   submitBirth,
 } from "../../store/slices/civilSlice";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
+import { Area } from "../../store/slices/areasSlice";
+import CitizenAutocomplete from "./CitizenAutoComplete";
 
 const BirthRegistrationList: React.FC = () => {
   const dispatch = useAppDispatch();
   const { birth, loading, error, currentItem } = useAppSelector((state) => state.civil);
 
   const [form, setForm] = useState({
-    mother: "",
-    father: "",
+    child_id: "",
+    child_display: "",
+    mother_id: "",
+    mother_display: "",
+    father_id: "",
+    father_display: "",
     place_of_birth: "",
-    date_of_birth: "",
-    gender: "",
+    date_of_birth: ""
   });
 
   const [editingBirthRecord, setEditingBirthRecord] = useState<any | null>(null);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [motherVerified, setMotherVerified] = useState(false);
   const [fatherVerified, setFatherVerified] = useState(false);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
-  // const totalPages = Math.ceil(total / pageSize);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: string }>({ 
+    key: null, 
+    direction: 'asc' 
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
@@ -41,34 +50,54 @@ const BirthRegistrationList: React.FC = () => {
     dispatch(fetchBirthRegistrations());
   }, [dispatch]);
 
-  // Create draft
+  // Create draft - now using IDs
   const handleCreate = () => {
-    dispatch(createBirth(form));
-    setForm({ mother: "", father: "", place_of_birth: "", date_of_birth: "", gender: "M" });
+    const payload = {
+      child: form.child_id,
+      mother: form.mother_id,
+      father: form.father_id || null, // optional
+      place_of_birth: form.place_of_birth,
+      date_of_birth: form.date_of_birth,
+      area: selectedAreaId
+    };
+    
+    dispatch(createBirth(payload));
+    
+    // Reset form
+    setForm({
+      child_id: "",
+      child_display: "",
+      mother_id: "",
+      mother_display: "",
+      father_id: "",
+      father_display: "",
+      place_of_birth: "",
+      date_of_birth: ""
+    });
+    setSelectedAreaId(null);
   };
 
-  // Update record
   const handleUpdate = () => {
     if (!editingBirthRecord) return;
     dispatch(updateBirth({ id: editingBirthRecord.id, data: editingBirthRecord }));
     setEditingBirthRecord(null);
   };
 
-  // Delete record
   const handleDelete = (id: string) => {
-    dispatch(deleteBirth(id));
+    if (window.confirm('Are you sure you want to delete this birth record?')) {
+      dispatch(deleteBirth(id));
+    }
   };
 
-  // Submit draft
   const handleSubmit = (id: string) => {
-    dispatch(submitBirth(id));
+    if (window.confirm('Submit this birth record for approval?')) {
+      dispatch(submitBirth(id));
+    }
   };
 
-  // Approve / Reject
   const handleApprove = (id: string) => dispatch(approveBirth(id));
   const handleReject = (id: string) => dispatch(rejectBirth(id));
 
-  // Open verification modal
   const handleSelect = (item: any) => {
     dispatch(setCurrentItem(item));
     setMotherVerified(!!item.mother_verified);
@@ -76,7 +105,6 @@ const BirthRegistrationList: React.FC = () => {
     setShowVerifyModal(true);
   };
 
-  // Close modal
   const closeModal = () => {
     setShowVerifyModal(false);
     dispatch(clearCurrentItem());
@@ -90,13 +118,17 @@ const BirthRegistrationList: React.FC = () => {
         motherVerified,
         fatherVerified,
       })
-    ).then(() => dispatch(clearCurrentItem()));
-    setShowVerifyModal(false);
+    ).then(() => {
+      dispatch(clearCurrentItem());
+      setShowVerifyModal(false);
+    });
   };
 
+  const handleAreaSelectionChange = (areaId: string | null, area: any | null) => {
+    setSelectedAreaId(areaId);
+  };
 
-  // Sorting function
-  const handleSort = (key) => {
+  const handleSort = (key: string) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -104,42 +136,24 @@ const BirthRegistrationList: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
     let filtered = birth.filter((b) => {
       const searchLower = searchTerm.toLowerCase();
       return (
-        b.mother.toLowerCase().includes(searchLower) ||
-        b.father.toLowerCase().includes(searchLower) ||
-        b.place_of_birth.toLowerCase().includes(searchLower) ||
-        b.date_of_birth.toLowerCase().includes(searchLower) ||
-        b.gender.toLowerCase().includes(searchLower)
+        b.child_name?.toLowerCase().includes(searchLower) ||
+        b.mother?.toLowerCase().includes(searchLower) ||
+        b.father?.toLowerCase().includes(searchLower) ||
+        b.place_of_birth?.toLowerCase().includes(searchLower) ||
+        b.date_of_birth?.toLowerCase().includes(searchLower) ||
+        b.reference_number?.toLowerCase().includes(searchLower)
       );
     });
 
     if (sortConfig.key) {
       filtered.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
+        let aVal = a[sortConfig.key as keyof typeof a];
+        let bVal = b[sortConfig.key as keyof typeof b];
 
-        // Handle nested properties
-        if (sortConfig.key === 'reported_by') {
-          aVal = `${a.reported_by?.first_name || ''} ${a.reported_by?.last_name || ''}`;
-          bVal = `${b.reported_by?.first_name || ''} ${b.reported_by?.last_name || ''}`;
-        }
-
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    if (sortConfig.key) {
-      filtered.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
-
-        // Handle nested properties
         if (sortConfig.key === 'reported_by') {
           aVal = `${a.reported_by?.first_name || ''} ${a.reported_by?.last_name || ''}`;
           bVal = `${b.reported_by?.first_name || ''} ${b.reported_by?.last_name || ''}`;
@@ -154,14 +168,13 @@ const BirthRegistrationList: React.FC = () => {
     return filtered;
   }, [birth, searchTerm, sortConfig]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
   const paginatedData = filteredAndSortedData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const SortIcon = ({ columnKey }) => {
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig.key !== columnKey) {
       return <span className="ml-1 text-gray-400">⇅</span>;
     }
@@ -186,33 +199,32 @@ const BirthRegistrationList: React.FC = () => {
         <h2 className="mb-4 text-lg font-medium text-gray-900">Register Birth</h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Mother
-            </label>
-            <input
-              placeholder="Mother ID"
-              value={form.mother}
-              onChange={(e) => setForm({ ...form, mother: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <CitizenAutocomplete
+            label="Child"
+            placeholder="Search child by name or ID number"
+            value={form.child_display}
+            onSelect={(id, display) => setForm({ ...form, child_id: id, child_display: display })}
+            required
+          />
+
+          <CitizenAutocomplete
+            label="Mother"
+            placeholder="Search mother by name or ID number"
+            value={form.mother_display}
+            onSelect={(id, display) => setForm({ ...form, mother_id: id, mother_display: display })}
+            required
+          />
+
+          <CitizenAutocomplete
+            label="Father (optional)"
+            placeholder="Search father by name or ID number"
+            value={form.father_display}
+            onSelect={(id, display) => setForm({ ...form, father_id: id, father_display: display })}
+          />
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Father (optional)
-            </label>
-            <input
-              placeholder="Father ID (optional)"
-              value={form.father}
-              onChange={(e) => setForm({ ...form, father: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Place of Birth
+              Place of Birth <span className="text-red-500">*</span>
             </label>
             <input
               placeholder="Place of Birth"
@@ -221,9 +233,10 @@ const BirthRegistrationList: React.FC = () => {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Date of Birth
+              Date of Birth <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -232,32 +245,25 @@ const BirthRegistrationList: React.FC = () => {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Gender
-            </label>
-            <select
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value as "M" | "F" })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            >
-              <option>Select ...</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
-          </div>
         </div>
+
+        <CompactAreaSelector
+          onSelectionChange={handleAreaSelectionChange}
+          className="max-w-1xl mt-4"
+        />
 
         <div className="mt-4">
           <button
             onClick={handleCreate}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            disabled={!form.child_id || !form.mother_id || !form.place_of_birth || !form.date_of_birth}
+            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Save Draft
           </button>
         </div>
       </div>
 
+      {/* Table Section */}
       <div className="bg-white rounded-lg shadow p-6 space-y-4">
         {/* Search Bar */}
         <div className="flex items-center justify-between gap-4">
@@ -299,10 +305,10 @@ const BirthRegistrationList: React.FC = () => {
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th
-                    onClick={() => handleSort('reference')}
+                    onClick={() => handleSort('reference_number')}
                     className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
                   >
-                    Reference <SortIcon columnKey="reference" />
+                    Reference <SortIcon columnKey="reference_number" />
                   </th>
                   <th
                     onClick={() => handleSort('child_name')}
@@ -341,9 +347,35 @@ const BirthRegistrationList: React.FC = () => {
                       <td className="px-4 py-3">{b.child_name}</td>
                       <td className="px-4 py-3">{b.date_of_birth}</td>
                       <td className="px-4 py-3">{b.place_of_birth}</td>
-                      <td className="px-4 py-3">{b.mother_verified ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3">{b.father_verified ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3">{b.status}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          b.mother_verified 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {b.mother_verified ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          b.father_verified 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {b.father_verified ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          b.status === 'draft' 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : b.status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 space-x-2">
                         <button
                           onClick={() => handleSelect(b)}
@@ -390,7 +422,7 @@ const BirthRegistrationList: React.FC = () => {
                 ) : (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                      No incidents found
+                      No birth records found
                     </td>
                   </tr>
                 )}
@@ -444,24 +476,6 @@ const BirthRegistrationList: React.FC = () => {
             <h3 className="mb-4 text-lg font-medium text-gray-900">Edit Birth Record</h3>
 
             <input
-              placeholder="Mother ID"
-              value={editingBirthRecord.mother}
-              onChange={(e) =>
-                setEditingBirthRecord({ ...editingBirthRecord, mother: e.target.value })
-              }
-              className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            />
-
-            <input
-              placeholder="Father ID (optional)"
-              value={editingBirthRecord.father}
-              onChange={(e) =>
-                setEditingBirthRecord({ ...editingBirthRecord, father: e.target.value })
-              }
-              className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            />
-
-            <input
               placeholder="Place of Birth"
               value={editingBirthRecord.place_of_birth}
               onChange={(e) =>
@@ -478,18 +492,6 @@ const BirthRegistrationList: React.FC = () => {
               }
               className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
-
-            <select
-              value={editingBirthRecord.gender}
-              onChange={(e) =>
-                setEditingBirthRecord({ ...editingBirthRecord, gender: e.target.value })
-              }
-              className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-            >
-              <option>Select ...</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
 
             <div className="flex justify-end gap-2">
               <button

@@ -33,6 +33,7 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
     const [loadingStates, setLoadingStates] = useState<{
         [key: string]: boolean;
     }>({});
+    const [kenyaArea, setKenyaArea] = useState<Area | null>(null);
 
     const getVisibleLevels = () => {
         if (!selectedLevel) return [];
@@ -44,23 +45,56 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
 
     const visibleLevels = getVisibleLevels();
 
+    // Load Kenya on mount
     useEffect(() => {
-        if (selectedLevel) {
-            setSelections({});
-            setAvailableAreas({});
-            setLoadingStates({ country: true });
-
-            loadAreas({ area_type: "country" }).then((result: any) => {
-                if (result.payload) {
-                    setAvailableAreas({ country: result.payload.data });
+        setLoadingStates({ country: true });
+        loadAreas({ area_type: "country" }).then((result: any) => {
+            if (result.payload) {
+                const countries = result.payload.data;
+                setAvailableAreas({ country: countries });
+                
+                // Find Kenya
+                const kenya = countries.find((area: Area) => 
+                    area.name.toLowerCase() === "kenya" || area.code === "KE"
+                );
+                
+                if (kenya) {
+                    setKenyaArea(kenya);
+                    setSelections({ country: kenya });
                 }
-                setLoadingStates({ country: false });
-            });
+            }
+            setLoadingStates({ country: false });
+        });
+    }, [loadAreas]);
 
-            // Reset selection when level changes
+    useEffect(() => {
+        if (selectedLevel && kenyaArea) {
+            // Reset to only Kenya selection
+            setSelections({ country: kenyaArea });
+            
+            // Clear other available areas except country
+            setAvailableAreas((prev) => ({ country: prev.country }));
+
+            // If region is selected, load Kenya's children
+            if (selectedLevel !== "country") {
+                const nextLevel = AREA_TYPES[1]; // region
+                setLoadingStates((prev) => ({ ...prev, [nextLevel.value]: true }));
+
+                loadAreaChildren(kenyaArea.id).then((result: any) => {
+                    if (result.payload) {
+                        setAvailableAreas((prev) => ({
+                            ...prev,
+                            [nextLevel.value]: result.payload as Area[]
+                        }));
+                    }
+                    setLoadingStates((prev) => ({ ...prev, [nextLevel.value]: false }));
+                });
+            }
+
+            // Reset parent selection
             onSelectionChange?.(null, null);
         }
-    }, [selectedLevel, loadAreas]);
+    }, [selectedLevel, kenyaArea, loadAreaChildren]);
 
     const handleAreaSelect = async (
         areaType: string,
@@ -116,7 +150,7 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
     };
 
     const isLevelDisabled = (levelValue: string): boolean => {
-        if (levelValue === "country") return false;
+        if (levelValue === "country") return true; // Kenya is always selected and disabled
         const levelIndex = AREA_TYPES.findIndex(
             (type) => type.value === levelValue
         );
@@ -145,8 +179,6 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
                         value={selectedLevel}
                         onChange={(e) => {
                             setSelectedLevel(e.target.value);
-                            setSelections({});
-                            setAvailableAreas({});
                         }}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >

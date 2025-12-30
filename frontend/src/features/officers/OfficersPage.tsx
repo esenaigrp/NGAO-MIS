@@ -16,6 +16,7 @@ import { fetchAdminUnits } from "../../store/slices/adminStructureSlice";
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
 import CompactAreaSelector from "../../components/CompactAreaSelector";
 import { Area } from "../../store/slices/areasSlice";
+import { createOfficerValidator, ValidationErrors } from "../../utils/formValitation";
 
 
 const OfficersPage: React.FC = () => {
@@ -44,12 +45,18 @@ const OfficersPage: React.FC = () => {
   const [roleInput, setRoleInput] = useState("");
   const [adminUnitInput, setAdminUnitInput] = useState("");
 
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+
+  // Create validator instance (memoized to avoid recreation)
+  const validator = useMemo(() => createOfficerValidator(), []);
 
   // const totalPages = Math.ceil(total / pageSize);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
 
   useEffect(() => {
     dispatch(fetchOfficers());
@@ -242,6 +249,57 @@ const OfficersPage: React.FC = () => {
   if (loading) return <p>Loading officers...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const error = validator.validateField(field, newOfficer[field as keyof typeof newOfficer]);
+    setErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  /**
+   * Handle field change with real-time validation
+   */
+  const handleFieldChange = (field: string, value: any) => {
+    setNewOfficer((prev) => ({ ...prev, [field]: value }));
+
+    // Only validate if field has been touched
+    if (touched[field]) {
+      const error = validator.validateField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    }
+  };
+
+  /**
+ * Render input field with validation
+ */
+  const renderInputField = (
+    name: string,
+    label: string,
+    type: string = "text",
+    placeholder: string = "",
+    required: boolean = false
+  ) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={newOfficer[name as keyof typeof newOfficer] as string}
+        onChange={(e) => handleFieldChange(name, e.target.value)}
+        onBlur={() => handleBlur(name)}
+        className={`w-full px-3 py-2 border rounded focus:ring-2 focus:outline-none ${errors[name] && touched[name]
+          ? "border-red-500 focus:ring-red-200"
+          : "border-gray-300 focus:ring-green-200"
+          }`}
+      />
+      {errors[name] && touched[name] && (
+        <p className="mt-1 text-xs text-red-600">{errors[name]}</p>
+      )}
+    </div>
+  );
+
+
   return (
     <div className="min-h-screen">
       <div className="p-6 space-y-8">
@@ -259,100 +317,103 @@ const OfficersPage: React.FC = () => {
         {/* Add Officer Card */}
         <div className="mb-10 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-lg font-medium text-gray-800">
-              Add New Officer
-            </h2>
+            <h2 className="text-lg font-medium text-gray-800">Add New Officer</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Fields marked with <span className="text-red-500">*</span> are required
+            </p>
           </div>
 
           <div className="p-6">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {/* Personal Information */}
-              <input
-                type="text"
-                placeholder="First Name"
-                value={newOfficer.first_name}
-                onChange={(e) => setNewOfficer({ ...newOfficer, first_name: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Last Name"
-                value={newOfficer.last_name}
-                onChange={(e) => setNewOfficer({ ...newOfficer, last_name: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
-              <input
-                type="email"
-                placeholder="Email *"
-                value={newOfficer.email}
-                onChange={(e) => setNewOfficer({ ...newOfficer, email: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-                required
-              />
+              {renderInputField(
+                "first_name",
+                "First Name",
+                "text",
+                "Enter first name",
+                true
+              )}
+              {renderInputField(
+                "last_name",
+                "Last Name",
+                "text",
+                "Enter last name",
+                true
+              )}
+              {renderInputField(
+                "email",
+                "Email",
+                "email",
+                "example@email.com",
+                true
+              )}
 
               {/* Contact Information */}
-              <input
-                type="tel"
-                placeholder="Phone"
-                value={newOfficer.phone}
-                onChange={(e) => setNewOfficer({ ...newOfficer, phone: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
-              <input
-                type="email"
-                placeholder="Office Email"
-                value={newOfficer.office_email}
-                onChange={(e) => setNewOfficer({ ...newOfficer, office_email: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
+              {renderInputField(
+                "phone",
+                "Phone Number",
+                "tel",
+                "0712345678 or +254712345678"
+              )}
+              {renderInputField(
+                "office_email",
+                "Office Email",
+                "email",
+                "office@email.com"
+              )}
 
               {/* Officer Details */}
-              <input
-                type="text"
-                placeholder="Badge Number"
-                value={newOfficer.badge_number}
-                onChange={(e) => setNewOfficer({ ...newOfficer, badge_number: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="ID Number"
-                value={newOfficer.id_number}
-                onChange={(e) => setNewOfficer({ ...newOfficer, id_number: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
-
-              {/* Role Information */}
-              <input
-                type="text"
-                placeholder="Role Text (e.g., Inspector)"
-                value={newOfficer.role_text}
-                onChange={(e) => setNewOfficer({ ...newOfficer, role_text: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
-              />
+              {renderInputField(
+                "badge_number",
+                "Badge Number",
+                "text",
+                "e.g., BDG12345"
+              )}
+              {renderInputField(
+                "id_number",
+                "National ID Number",
+                "text",
+                "e.g., 12345678"
+              )}
+              {renderInputField(
+                "role_text",
+                "Role / Position",
+                "text",
+                "e.g., Inspector, Officer"
+              )}
 
               {/* Admin Unit Dropdown */}
-              <select
-                value={newOfficer.admin_unit}
-                onChange={(e) => setNewOfficer({ ...newOfficer, admin_unit: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none bg-white"
-              >
-                <option value="">Select Admin Unit</option>
-                {adminUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.properties.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Administrative Unit
+                </label>
+                <select
+                  value={newOfficer.admin_unit}
+                  onChange={(e) => handleFieldChange("admin_unit", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-200 focus:outline-none bg-white"
+                >
+                  <option value="">Select Admin Unit</option>
+                  {adminUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.properties.name}
+                </option>
+              ))}
+                </select>
+              </div>
 
               {/* Notes - Full Width */}
-              <textarea
-                placeholder="Notes"
-                value={newOfficer.notes}
-                onChange={(e) => setNewOfficer({ ...newOfficer, notes: e.target.value })}
-                className="px-3 py-2 border rounded focus:ring-2 focus:ring-green-200 focus:outline-none md:col-span-2"
-                rows={2}
-              />
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  placeholder="Additional notes or comments..."
+                  value={newOfficer.notes}
+                  onChange={(e) => handleFieldChange("notes", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-200 focus:outline-none"
+                  rows={3}
+                />
+              </div>
 
               {/* Active Status */}
               <div className="flex items-center">
@@ -360,26 +421,39 @@ const OfficersPage: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={newOfficer.is_active}
-                    onChange={(e) => setNewOfficer({ ...newOfficer, is_active: e.target.checked })}
+                    onChange={(e) => handleFieldChange("is_active", e.target.checked)}
                     className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Active Status</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    Active Status
+                  </span>
                 </label>
               </div>
             </div>
-            <CompactAreaSelector
-              onSelectionChange={handleAreaSelectionChange}
-              className="max-w-1xl mt-2"
-            />
+
+            {/* Area Selector */}
+            <div className="mt-6">
+              <CompactAreaSelector
+                onSelectionChange={handleAreaSelectionChange}
+                className="max-w-7xl"
+              />
+            </div>
 
             {/* Submit Button */}
-            <div className="mt-6">
+            <div className="mt-6 flex items-center gap-4">
               <button
                 onClick={handleCreate}
-                className="px-6 py-2 font-semibold text-white bg-green-700 rounded hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                className="px-6 py-2 font-semibold text-white bg-green-700 rounded hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
               >
-                Add Officer
+                Submit
               </button>
+
+              {Object.keys(errors).length > 0 &&
+                Object.values(touched).some((v) => v) && (
+                  <p className="text-sm text-red-600">
+                    Please fix the errors above before submitting
+                  </p>
+                )}
             </div>
           </div>
         </div>

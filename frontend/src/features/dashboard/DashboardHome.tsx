@@ -5,6 +5,10 @@ import { deleteIncident, fetchMyIncidents, updateIncident } from "../../store/sl
 import StatCard from "../../components/ui/statCard";
 import { fetchAdminUnits } from "../../store/slices/adminStructureSlice";
 import { loadDashboard } from "../../store/slices/dashboardSlice";
+import IncidentStatistics from "./IncidentStatistics";
+import VitalStatistics from "./VitalStatistics";
+import IncidentMapModal from "../incidents/IncidentsMapModal";
+
 
 const DashboardHome: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -13,6 +17,7 @@ const DashboardHome: React.FC = () => {
   const { list, loading, error, page, pageSize, total } = useAppSelector((state) => state.incidents);
   const { adminUnits } = useAppSelector((state) => state.adminUnits);
   const { user } = useAppSelector((state) => state.auth);
+  const [showIncidentMap, setShowIncidentMap] = useState(false);
 
   const [editingIncident, setEditingIncident] = useState<any | null>(null);
   const [newIncident, setNewIncident] = useState<any>({
@@ -76,6 +81,7 @@ const DashboardHome: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
+
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
     let filtered = list.filter((incident) => {
@@ -138,24 +144,16 @@ const DashboardHome: React.FC = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
-          <StatCard
-            title="Open Incidents"
-            value={data?.stats?.open}
-            icon={<FaClock />}
-            color="bg-blue-700"
+        <div className="mx-auto">
+          <IncidentStatistics
+            data={data?.incidents}
+            onCardClick={() => setShowIncidentMap(true)}
           />
-          <StatCard
-            title="Urgent Incidents"
-            value={data?.stats?.urgent}
-            icon={<FaExclamationTriangle />}
-            color="bg-red-700"
-          />
-          <StatCard
-            title="Resolved Today"
-            value={data?.stats?.resolved_today}
-            icon={<FaCheckCircle />}
-            color="bg-green-700"
+
+          <VitalStatistics
+            birthsData={data?.births}
+            deathsData={data?.deaths}
+            marriagesData={data?.marriages}
           />
         </div>
 
@@ -384,6 +382,13 @@ const DashboardHome: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {showIncidentMap && (
+            <IncidentMapModal
+              incidents={data?.incidents?.list}
+              onClose={() => setShowIncidentMap(false)}
+            />
           )}
         </div>
       </div>

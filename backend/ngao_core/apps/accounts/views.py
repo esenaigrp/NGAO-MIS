@@ -128,11 +128,11 @@ class OfficerProfileViewSet(viewsets.ModelViewSet):
             )
 
             # Create officer profile
-            # Create officer profile - pass user ID directly
             officer = OfficerProfile.objects.create(
                 user=user,
                 phone=request.data.get("phone"),
                 role_text=request.data.get("role_text"),
+                area_id=request.data.get("area"),
                 badge_number=request.data.get("badge_number"),
                 id_number=request.data.get("id_number"),
                 office_email=request.data.get("office_email"),

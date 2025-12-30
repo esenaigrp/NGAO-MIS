@@ -2,6 +2,7 @@ from rest_framework import serializers
 from ngao_core.apps.accounts.models import CustomUser
 from ngao_core.apps.accounts.serializers import UserSerializer
 from ngao_core.apps.admin_structure.serializers import AdminUnitSerializer
+from ngao_core.apps.geography.serializers import AreaSerializer
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Incident, Response
 
@@ -29,6 +30,7 @@ class IncidentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     reported_by_name = serializers.ReadOnlyField(source="reported_by.username")
     location_name = serializers.ReadOnlyField(source="location.name", default=None)
+    area = AreaSerializer(read_only=True)
 
     class Meta:
         model = Incident
@@ -45,6 +47,7 @@ class IncidentSerializer(serializers.ModelSerializer):
             "current_handler",
             "reporter_phone",
             "location",
+            "area",
             "location_name",
             "reported_by_name",
             "responses",

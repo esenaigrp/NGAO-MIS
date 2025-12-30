@@ -16,6 +16,7 @@ from ngao_core.apps.accounts.models import (
 )
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Device, DeviceApprovalRequest
+from ngao_core.apps.geography.serializers import AreaSerializer
 
 
 User = get_user_model()
@@ -76,6 +77,7 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
     # role = RoleSerializer(read_only=True)
     admin_unit = AdminUnitSerializer(read_only=True)
     contact_points = ContactPointSerializer(many=True, read_only=True)
+    area = AreaSerializer(read_only=True)
 
     class Meta:
         model = OfficerProfile
@@ -86,6 +88,7 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
             "phone",
             "office_email",
             "location",
+            "area",
             "is_active",
             "contact_points",           
             "created_at",

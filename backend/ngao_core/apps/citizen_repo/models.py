@@ -12,11 +12,7 @@ class Citizen(models.Model):
     )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    id_number = models.CharField(
-        max_length=20,
-        unique=True,
-        db_index=True
-    )
+    id_number = models.CharField(max_length=20, unique=True, db_index=True, null=True, blank=True)
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
@@ -68,8 +64,8 @@ class CitizenQueryLog(models.Model):
         related_name="citizen_queries",
     )
 
-    id_number_queried = models.CharField(max_length=20)
-    last_name_provided = models.CharField(max_length=100, blank=True)
+    id_number_queried = models.CharField(max_length=20, null=True, blank=True)
+    last_name_provided = models.CharField(max_length=100, null=True, blank=True)
 
     module = models.CharField(
         max_length=20,

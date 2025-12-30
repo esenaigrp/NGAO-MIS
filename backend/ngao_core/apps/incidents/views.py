@@ -1,6 +1,9 @@
 from ngao_core.apps.accounts.permissions import IsCountyCommissioner
 from django.db.models import Count, Q
+from calendar import month_abbr
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets, generics
 from rest_framework.decorators import action, api_view, permission_classes
@@ -20,8 +23,10 @@ from django.contrib.gis.geos import Point
 from ngao_core.apps.accounts.models import OfficerProfile
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Incident, Response
+from ngao_core.apps.geography.models import Area
 from .permissions import IsReporterOrAbove
 from .serializers import IncidentSerializer, ResponseSerializer
+from ngao_core.apps.civil_registration.models import BirthRegistration, DeathRegistration, MarriageRegistration
 
 
 class IncidentViewSet(viewsets.ModelViewSet):
@@ -63,17 +68,37 @@ class IncidentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        
-        # Try to get officer coordinates
         coordinates = None
-        try:
-            profile = OfficerProfile.objects.get(user=user)
-            coordinates = profile.location
-        except OfficerProfile.DoesNotExist:
-            coordinates = Point(0.0, 0.0)
+        area_id = self.request.data.get("area")
+        area = None
+
+        if area_id:
+            try:
+                area = Area.objects.get(id=area_id)
+            except Area.DoesNotExist:
+                raise ValidationError({"area": "Selected area does not exist."})
+            
+        # ---------------------------------------
+        # 1. Coordinates from Area boundary
+        # ---------------------------------------
+        if area and area.boundary:
+            # MULTIPOLYGON → centroid POINT
+            coordinates = area.boundary.centroid
+
+        # ---------------------------------------
+        # 2. Fallback: Officer profile area
+        # ---------------------------------------
+        if not coordinates:
+            try:
+                profile = OfficerProfile.objects.get(user=user)
+                if profile.area:
+                    coordinates = profile.area.boundary.centroid
+            except OfficerProfile.DoesNotExist:
+                pass
 
         serializer.save(
             reported_by=user,
+            area=area,
             coordinates=serializer.validated_data.get("coordinates", coordinates),
         )
 
@@ -98,6 +123,171 @@ class IncidentViewSet(viewsets.ModelViewSet):
     def dashboard_stats(self, request):
         user = request.user
         today = now().date()
+        current_month = today.month
+        current_year = today.year
+
+        # ------------------------------------------------
+        # Base querysets (ROLE-BASED)
+        # ------------------------------------------------
+        if user.is_staff or user.is_superuser:
+            incidents_qs = Incident.objects.all()
+            births_qs = BirthRegistration.objects.all()
+            deaths_qs = DeathRegistration.objects.all()
+            marriages_qs = MarriageRegistration.objects.all()
+        else:
+            incidents_qs = Incident.objects.filter(current_handler=user)
+            births_qs = BirthRegistration.objects.filter(initiated_by=user)
+            deaths_qs = DeathRegistration.objects.filter(initiated_by=user)
+            marriages_qs = MarriageRegistration.objects.filter(initiated_by=user)
+
+        # ------------------------------------------------
+        # INCIDENTS
+        # ------------------------------------------------
+        incidents_stats = {
+            "open": incidents_qs.filter(status="reported").count(),
+            "urgent": incidents_qs.filter(status="urgent").count(),
+            "resolved_today": incidents_qs.filter(
+                status="resolved",
+                date_resolved__date=today
+            ).count(),
+        }
+
+        incidents_list = IncidentSerializer(
+            incidents_qs,
+            many=True,
+            context={"request": request},
+        ).data
+
+        incidents_by_type = (
+            incidents_qs
+            .values("incident_type")  # ensure field exists
+            .annotate(value=Count("id"))
+            .order_by()
+        )
+
+        incidents_by_type = [
+            {"name": item["incident_type"], "value": item["value"]}
+            for item in incidents_by_type
+        ]
+
+        incidents_trend_qs = (
+            incidents_qs
+            .annotate(month=TruncMonth("reported_at"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        incidents_trend = [
+            {
+                "month": month_abbr[item["month"].month],
+                "count": item["count"],
+            }
+            for item in incidents_trend_qs
+        ]
+
+        # ------------------------------------------------
+        # BIRTHS
+        # ------------------------------------------------
+        births_trend_qs = (
+            births_qs
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        births = {
+            "total": births_qs.count(),
+            "thisMonth": births_qs.filter(
+                created_at__year=current_year,
+                created_at__month=current_month,
+            ).count(),
+            "trend": [
+                {
+                    "month": month_abbr[item["month"].month],
+                    "count": item["count"],
+                }
+                for item in births_trend_qs
+            ],
+            "byGender": [
+                {"name": "Male", "value": births_qs.filter(gender="M").count()},
+                {"name": "Female", "value": births_qs.filter(gender="F").count()},
+            ],
+        }
+
+        # ------------------------------------------------
+        # DEATHS
+        # ------------------------------------------------
+        deaths_trend_qs = (
+            deaths_qs
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        deaths = {
+            "total": deaths_qs.count(),
+            "thisMonth": deaths_qs.filter(
+                created_at__year=current_year,
+                created_at__month=current_month,
+            ).count(),
+            "trend": [
+                {
+                    "month": month_abbr[item["month"].month],
+                    "count": item["count"],
+                }
+                for item in deaths_trend_qs
+            ],
+            "byAgeGroup": [
+                {"name": "0-18", "value": deaths_qs.filter(age__lte=18).count()},
+                {"name": "19-35", "value": deaths_qs.filter(age__range=(19, 35)).count()},
+                {"name": "36-60", "value": deaths_qs.filter(age__range=(36, 60)).count()},
+                {"name": "60+", "value": deaths_qs.filter(age__gt=60).count()},
+            ],
+        }
+
+        # ------------------------------------------------
+        # MARRIAGES
+        # ------------------------------------------------
+        marriages_trend_qs = (
+            marriages_qs
+            .annotate(month=TruncMonth("date_of_marriage"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+
+        marriages = {
+            "total": marriages_qs.count(),
+            "thisMonth": marriages_qs.filter(
+                date_of_marriage__year=current_year,
+                date_of_marriage__month=current_month,
+            ).count(),
+            "trend": [
+                {
+                    "month": month_abbr[item["month"].month],
+                    "count": item["count"],
+                }
+                for item in marriages_trend_qs
+            ],
+        }
+
+        # ------------------------------------------------
+        # FINAL RESPONSE (FRONTEND-READY)
+        # ------------------------------------------------
+        return DRFResponse({
+            "incidents": {
+                "stats": incidents_stats,
+                "list": incidents_list,
+                "byType": incidents_by_type,
+                "trend": incidents_trend,
+            },
+            "births": births,
+            "deaths": deaths,
+            "marriages": marriages,
+        })
 
         # -------------------------
         # Base queryset by role

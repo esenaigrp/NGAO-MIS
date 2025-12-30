@@ -150,6 +150,7 @@ class DeathRegistration(models.Model):
     area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
     reference_number = models.CharField(max_length=30, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
+    age = models.BigIntegerField(default=0)
     approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
 

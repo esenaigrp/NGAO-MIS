@@ -37,7 +37,6 @@ const OfficersPage: React.FC = () => {
     badge_number: '',
     id_number: '',
     office_email: '',
-    admin_unit: '',
     is_active: true,
     notes: '',
     area: selectedAreaId
@@ -83,30 +82,33 @@ const OfficersPage: React.FC = () => {
       badge_number: newOfficer.badge_number,
       id_number: newOfficer.id_number,
       office_email: newOfficer.office_email,
-      admin_unit: newOfficer.admin_unit,
       is_active: newOfficer.is_active,
       notes: newOfficer.notes,
       area: selectedAreaId
     };
 
-    dispatch(createOfficer(officerData));
+    dispatch(createOfficer(officerData))
+      .unwrap()
+      .then(() => {
+        setNewOfficer({
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          role: '',
+          role_text: '',
+          badge_number: '',
+          id_number: '',
+          office_email: '',
+          is_active: true,
+          notes: '',
+          area: ''
+        });
 
-    // Reset form
-    setNewOfficer({
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      role: '',
-      role_text: '',
-      badge_number: '',
-      id_number: '',
-      office_email: '',
-      admin_unit: '',
-      is_active: true,
-      notes: '',
-      area: selectedAreaId
-    });
+      })
+      .catch((error) => {
+        console.error("Incident creation failed:", error);
+      });
 
   };
 
@@ -383,7 +385,7 @@ const OfficersPage: React.FC = () => {
               )}
 
               {/* Admin Unit Dropdown */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Administrative Unit
                 </label>
@@ -394,12 +396,12 @@ const OfficersPage: React.FC = () => {
                 >
                   <option value="">Select Admin Unit</option>
                   {adminUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.properties.name}
-                </option>
-              ))}
+                    <option key={unit.id} value={unit.id}>
+                      {unit.properties.name}
+                    </option>
+                  ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* Notes - Full Width */}
               <div className="md:col-span-2">

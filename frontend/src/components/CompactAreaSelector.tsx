@@ -257,7 +257,7 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
             {/* ===================== */}
             {/* Row 2: Breadcrumbs */}
             {/* ===================== */}
-            {Object.keys(selections).length > 0 && (
+            {/* {Object.keys(selections).length > 0 && (
                 <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                     <p className="text-xs font-semibold text-gray-600 mb-2">
                         Selection Path
@@ -289,12 +289,12 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
                         })}
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* ===================== */}
             {/* Final Selection Indicator */}
             {/* ===================== */}
-            {isTargetLevelSelected && (
+            {/* {isTargetLevelSelected && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2">
                         <svg
@@ -315,7 +315,7 @@ const CompactAreaSelector = ({ onSelectionChange, className = "" }: Props) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     );
 

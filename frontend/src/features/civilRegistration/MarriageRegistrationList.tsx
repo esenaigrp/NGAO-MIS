@@ -6,19 +6,51 @@ import CompactAreaSelector from "../../components/CompactAreaSelector";
 import { Area } from "../../store/slices/areasSlice";
 import CitizenAutocomplete from "./CitizenAutoComplete";
 
-interface MarriageInputForm {
-  spouse_1: string;
-  spouse_2: string;
+export interface MarriageInputForm {
+  // Core marriage details
+  husband: string;
+  wife: string;
+  husband_display: string;
+  wife_display: string;
+
+  marriage_type: string;
   date_of_marriage: string;
   place_of_marriage: string;
+
+  officiant_name?: string;
+  officiant_title?: string;
+  certificate_number?: string;
+
+  // System fields
   initiated_by: string;
   reference_number: string;
-  status: "submitted" | "approved" | "rejected" | string;
+  status: any;
   approved_at?: string;
-  area?: string;
-  husband_display?: string,
-  wife_display?: string,
+  area: string;
+
+  // Husband details
+  husband_nationality?: string;
+  husband_previous_status?: string;
+  husband_occupation?: string;
+  husband_address?: string;
+
+  husband_father_name?: string;
+  husband_father_nationality?: string;
+  husband_mother_name?: string;
+  husband_mother_nationality?: string;
+
+  // Wife details
+  wife_nationality?: string;
+  wife_previous_status?: string;
+  wife_occupation?: string;
+  wife_address?: string;
+
+  wife_father_name?: string;
+  wife_father_nationality?: string;
+  wife_mother_name?: string;
+  wife_mother_nationality?: string;
 }
+
 
 const MarriageRegistrationList: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -26,18 +58,46 @@ const MarriageRegistrationList: React.FC = () => {
   const { citizens } = useAppSelector((state) => state.citizens);
 
   const [newMarriage, setNewMarriage] = useState<MarriageInputForm>({
-    spouse_1: "",
-    spouse_2: "",
+    husband: "",
+    wife: "",
+    husband_display: "",
+    wife_display: "",
+
+    marriage_type: "",
     date_of_marriage: "",
     place_of_marriage: "",
+
+    officiant_name: "",
+    officiant_title: "",
+    certificate_number: "",
+
     initiated_by: "",
     reference_number: "",
     status: "submitted",
     approved_at: "",
     area: "",
-    husband_display: "",
-    wife_display: "",
+
+    // Husband
+    husband_nationality: "",
+    husband_previous_status: "",
+    husband_occupation: "",
+    husband_address: "",
+    husband_father_name: "",
+    husband_father_nationality: "",
+    husband_mother_name: "",
+    husband_mother_nationality: "",
+
+    // Wife
+    wife_nationality: "",
+    wife_previous_status: "",
+    wife_occupation: "",
+    wife_address: "",
+    wife_father_name: "",
+    wife_father_nationality: "",
+    wife_mother_name: "",
+    wife_mother_nationality: "",
   });
+
 
   const [editingMarriage, setEditingMarriage] = useState<MarriageInputForm | null>(null);
   const [spouse1Search, setSpouse1Search] = useState("");
@@ -52,6 +112,13 @@ const MarriageRegistrationList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
+  const [showSpouse1Parents, setShowSpouse1Parents] = useState(false);
+  const [showSpouse2Parents, setShowSpouse2Parents] = useState(false);
+  const [showWitnesses, setShowWitnesses] = useState(false);
+  const [witnesses, setWitnesses] = useState([
+    { name: '', id_number: '', phone: '', relationship: '' }
+  ]);
+
   useEffect(() => {
     dispatch(fetchMarriageRegistrations());
   }, [dispatch]);
@@ -59,17 +126,44 @@ const MarriageRegistrationList: React.FC = () => {
   const handleCreate = () => {
     dispatch(createMarriage(newMarriage));
     setNewMarriage({
-      spouse_1: "",
-      spouse_2: "",
+      husband: "",
+      wife: "",
       husband_display: "",
       wife_display: "",
+
+      marriage_type: "",
       date_of_marriage: "",
       place_of_marriage: "",
+
+      officiant_name: "",
+      officiant_title: "",
+      certificate_number: "",
+
       initiated_by: "",
       reference_number: "",
       status: "submitted",
       approved_at: "",
-      area: selectedAreaId
+      area: "",
+
+      // Husband
+      husband_nationality: "",
+      husband_previous_status: "",
+      husband_occupation: "",
+      husband_address: "",
+      husband_father_name: "",
+      husband_father_nationality: "",
+      husband_mother_name: "",
+      husband_mother_nationality: "",
+
+      // Wife
+      wife_nationality: "",
+      wife_previous_status: "",
+      wife_occupation: "",
+      wife_address: "",
+      wife_father_name: "",
+      wife_father_nationality: "",
+      wife_mother_name: "",
+      wife_mother_nationality: "",
     });
     setSpouse1Search("");
     setSpouse2Search("");
@@ -85,6 +179,27 @@ const MarriageRegistrationList: React.FC = () => {
     if (window.confirm("Delete this record?")) {
       dispatch(deleteMarriage(id));
     }
+  };
+
+
+  const handleAddWitness = () => {
+    if (!showWitnesses) {
+      setShowWitnesses(true);
+    }
+    setWitnesses([...witnesses, { name: '', id_number: '', phone: '', relationship: '' }]);
+  };
+
+  const handleRemoveWitness = (index) => {
+    if (witnesses.length > 1) {
+      setWitnesses(witnesses.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleWitnessChange = (index, field, value) => {
+    const updatedWitnesses = witnesses.map((witness, i) =>
+      i === index ? { ...witness, [field]: value } : witness
+    );
+    setWitnesses(updatedWitnesses);
   };
 
   const handleAreaSelectionChange = (areaId: string | null, area: Area | null) => {
@@ -179,108 +294,600 @@ const MarriageRegistrationList: React.FC = () => {
           Manage marriage registration records submitted by citizens.
         </p>
       </div>
-
-      {/* Register Marriage Form */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-medium text-gray-900">Register Marriage</h2>
+        <h2 className="mb-6 text-lg font-medium text-gray-900">Register Marriage</h2>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Spouse 1 - Husband */}
-          <div>
-            <CitizenAutocomplete
-              label="Husband"
-              placeholder="Search by name or ID number"
-              value={newMarriage.husband_display}
-              onSelect={(id, display) => setNewMarriage({ ...newMarriage, spouse_1: id, husband_display: display })}
-              required
-            />
+        {/* Marriage Details Section */}
+        <div className="mb-6">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Marriage Details
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Marriage Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={newMarriage?.marriage_type || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, marriage_type: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Type...</option>
+                <option value="civil">Civil Marriage</option>
+                <option value="religious">Religious Marriage</option>
+                <option value="customary">Customary Marriage</option>
+                <option value="islamic">Islamic Marriage</option>
+                <option value="hindu">Hindu Marriage</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Date of Marriage <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={newMarriage.date_of_marriage}
+                onChange={(e) => setNewMarriage({ ...newMarriage, date_of_marriage: e.target.value })}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Place/Venue of Marriage <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={newMarriage.place_of_marriage}
+                onChange={(e) => setNewMarriage({ ...newMarriage, place_of_marriage: e.target.value })}
+                placeholder="Church, Court, Venue..."
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Officiant Name
+              </label>
+              <input
+                type="text"
+                value={newMarriage?.officiant_name || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, officiant_name: e.target.value })}
+                placeholder="Name of officiant"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Officiant Title/Role
+              </label>
+              <input
+                type="text"
+                value={newMarriage.officiant_title || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, officiant_title: e.target.value })}
+                placeholder="Pastor, Judge, Registrar..."
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Marriage Certificate Number
+              </label>
+              <input
+                type="text"
+                value={newMarriage.certificate_number || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, certificate_number: e.target.value })}
+                placeholder="Certificate number"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
-
-          {/* Spouse 2 - Wife */}
-          <div>
-             <CitizenAutocomplete
-              label="Wife"
-              placeholder="Search by name or ID number"
-              value={newMarriage.wife_display}
-              onSelect={(id, display) => setNewMarriage({ ...newMarriage, spouse_2: id, wife_display: display })}
-              required
-            />
-          </div>
-
-          {/* Other Fields */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Date of Marriage</label>
-            <input
-              type="date"
-              value={newMarriage.date_of_marriage}
-              onChange={(e) => setNewMarriage({ ...newMarriage, date_of_marriage: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Place/Venue of Marriage</label>
-            <input
-              type="text"
-              value={newMarriage.place_of_marriage}
-              onChange={(e) => setNewMarriage({ ...newMarriage, place_of_marriage: e.target.value })}
-              placeholder="Location / Venue"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Initiated By</label>
-            <input
-              type="text"
-              value={newMarriage.initiated_by}
-              onChange={(e) => setNewMarriage({ ...newMarriage, initiated_by: e.target.value })}
-              placeholder="User initiating record"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Reference Number</label>
-            <input
-              type="text"
-              value={newMarriage.reference_number}
-              onChange={(e) => setNewMarriage({ ...newMarriage, reference_number: e.target.value })}
-              placeholder="Unique reference"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              value={newMarriage.status}
-              onChange={(e) => setNewMarriage({ ...newMarriage, status: e.target.value as any })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="submitted">Submitted</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Approved At</label>
-            <input
-              type="datetime-local"
-              value={newMarriage.approved_at}
-              onChange={(e) => setNewMarriage({ ...newMarriage, approved_at: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div> */}
         </div>
-        <CompactAreaSelector
+
+        {/* Spouse 1 (Husband) Section */}
+        <div className="mb-6 border-t border-gray-200 pt-6">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Spouse 1 (Husband) Information
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <CitizenAutocomplete
+                label="Husband"
+                placeholder="Search by name or ID number"
+                value={newMarriage.husband_display}
+                onSelect={(id, display) => setNewMarriage({ ...newMarriage, husband: id, husband_display: display })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Nationality <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={newMarriage.husband_nationality || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, husband_nationality: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                <option value="kenyan">Kenyan</option>
+                <option value="ugandan">Ugandan</option>
+                <option value="tanzanian">Tanzanian</option>
+                <option value="rwandan">Rwandan</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Marital Status Before Marriage <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={newMarriage.husband_previous_status || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, husband_previous_status: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                <option value="bachelor">Bachelor</option>
+                <option value="divorced">Divorced</option>
+                <option value="widower">Widower</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Occupation
+              </label>
+              <input
+                type="text"
+                value={newMarriage.husband_occupation || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, husband_occupation: e.target.value })}
+                placeholder="Occupation"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Residence Address
+              </label>
+              <input
+                type="text"
+                value={newMarriage.husband_address || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, husband_address: e.target.value })}
+                placeholder="Current address"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Spouse 1 Parents */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <div
+              onClick={() => setShowSpouse1Parents(!showSpouse1Parents)}
+              className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">Parent/Guardian Details (Optional)</span>
+              </div>
+              <svg
+                className={`h-4 w-4 text-gray-400 transition-transform ${showSpouse1Parents ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            {showSpouse1Parents && (
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Father's Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.husband_father_name || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, husband_father_name: e.target.value })}
+                    placeholder="Father's name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Father's Nationality
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.husband_father_nationality || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, husband_father_nationality: e.target.value })}
+                    placeholder="Nationality"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Mother's Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.husband_mother_name || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, husband_mother_name: e.target.value })}
+                    placeholder="Mother's name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Mother's Nationality
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.husband_mother_nationality || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, husband_mother_nationality: e.target.value })}
+                    placeholder="Nationality"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Spouse 2 (Wife) Section */}
+        <div className="mb-6 border-t border-gray-200 pt-6">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Spouse 2 (Wife) Information
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <CitizenAutocomplete
+                label="Wife"
+                placeholder="Search by name or ID number"
+                value={newMarriage.wife_display}
+                onSelect={(id, display) => setNewMarriage({ ...newMarriage, wife: id, wife_display: display })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Nationality <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={newMarriage.wife_nationality || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, wife_nationality: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                <option value="kenyan">Kenyan</option>
+                <option value="ugandan">Ugandan</option>
+                <option value="tanzanian">Tanzanian</option>
+                <option value="rwandan">Rwandan</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Marital Status Before Marriage <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={newMarriage.wife_previous_status || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, wife_previous_status: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                <option value="spinster">Spinster</option>
+                <option value="divorced">Divorced</option>
+                <option value="widow">Widow</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Occupation
+              </label>
+              <input
+                type="text"
+                value={newMarriage.wife_occupation || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, wife_occupation: e.target.value })}
+                placeholder="Occupation"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Residence Address
+              </label>
+              <input
+                type="text"
+                value={newMarriage.wife_address || ''}
+                onChange={(e) => setNewMarriage({ ...newMarriage, wife_address: e.target.value })}
+                placeholder="Current address"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                   focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Spouse 2 Parents */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <div
+              onClick={() => setShowSpouse2Parents(!showSpouse2Parents)}
+              className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">Parent/Guardian Details (Optional)</span>
+              </div>
+              <svg
+                className={`h-4 w-4 text-gray-400 transition-transform ${showSpouse2Parents ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            {showSpouse2Parents && (
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Father's Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.wife_father_name || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, wife_father_name: e.target.value })}
+                    placeholder="Father's name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Father's Nationality
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.wife_father_nationality || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, wife_father_nationality: e.target.value })}
+                    placeholder="Nationality"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Mother's Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.wife_mother_name || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, wife_mother_name: e.target.value })}
+                    placeholder="Mother's name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Mother's Nationality
+                  </label>
+                  <input
+                    type="text"
+                    value={newMarriage.wife_mother_nationality || ''}
+                    onChange={(e) => setNewMarriage({ ...newMarriage, wife_mother_nationality: e.target.value })}
+                    placeholder="Nationality"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Witnesses Section */}
+        <div className="mb-6 border-t border-gray-200 pt-6">
+          <div className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+            <div
+              onClick={() => setShowWitnesses(!showWitnesses)}
+              className="flex items-center gap-3 flex-1 cursor-pointer"
+            >
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${showWitnesses ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'}`}>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Witnesses
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Add witness information (minimum 2 required)
+                  {witnesses.length > 0 && witnesses.some(w => w.name || w.id_number) &&
+                    ` (${witnesses.filter(w => w.name || w.id_number).length} added)`
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {showWitnesses && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddWitness();
+                  }}
+                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  + Add Witness
+                </button>
+              )}
+              {showWitnesses && (
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  Active
+                </span>
+              )}
+              <svg
+                onClick={() => setShowWitnesses(!showWitnesses)}
+                className={`h-5 w-5 text-gray-400 transition-transform cursor-pointer ${showWitnesses ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {showWitnesses && (
+            <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+              {witnesses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500 mb-3">No witnesses added yet (minimum 2 required)</p>
+                  <button
+                    type="button"
+                    onClick={handleAddWitness}
+                    className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  >
+                    + Add First Witness
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {witnesses.map((witness, index) => (
+                    <div key={index} className="mb-6 last:mb-0">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-600">
+                          Witness {index + 1}
+                        </span>
+                        {witnesses.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWitness(index)}
+                            className="text-xs text-red-600 hover:text-red-800 focus:outline-none font-medium"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Full Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={witness.name}
+                            onChange={(e) => handleWitnessChange(index, 'name', e.target.value)}
+                            placeholder="Witness's full name"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            ID/Passport Number <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={witness.id_number}
+                            onChange={(e) => handleWitnessChange(index, 'id_number', e.target.value)}
+                            placeholder="ID or passport"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={witness.phone}
+                            onChange={(e) => handleWitnessChange(index, 'phone', e.target.value)}
+                            placeholder="+254..."
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                             focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Relationship to Couple
+                          </label>
+                          <input
+                            type="text"
+                            value={witness.relationship}
+                            onChange={(e) => handleWitnessChange(index, 'relationship', e.target.value)}
+                            placeholder="Friend, Family..."
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                             focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      {index < witnesses.length - 1 && (
+                        <div className="mt-4 border-b border-gray-200"></div>
+                      )}
+                    </div>
+                  ))}
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={handleAddWitness}
+                      className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+                    >
+                      + Add Another Witness
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+         <CompactAreaSelector
           onSelectionChange={handleAreaSelectionChange}
           className="max-w-1xl mt-2"
         />
@@ -478,9 +1085,9 @@ const MarriageRegistrationList: React.FC = () => {
                            focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
-                value={editingMarriage.spouse_1}
+                value={editingMarriage.husband}
                 onChange={(e) =>
-                  setEditingMarriage({ ...editingMarriage, spouse_1: e.target.value })
+                  setEditingMarriage({ ...editingMarriage, husband: e.target.value })
                 }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                            focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -507,9 +1114,9 @@ const MarriageRegistrationList: React.FC = () => {
                            focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
-                value={editingMarriage.spouse_2}
+                value={editingMarriage.wife}
                 onChange={(e) =>
-                  setEditingMarriage({ ...editingMarriage, spouse_2: e.target.value })
+                  setEditingMarriage({ ...editingMarriage, wife: e.target.value })
                 }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                            focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"

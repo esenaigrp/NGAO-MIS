@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import authApi from "../../api/axiosClient";
 import { AdminUnit } from "./adminStructureSlice";
+import { Area } from "recharts";
 
 // -------------------------
 // Types
@@ -32,6 +33,7 @@ export interface Officer {
   is_active: boolean;
   notes?: string;
   office_email?: string;
+  area?: Area;
 }
 
 // -------------------------

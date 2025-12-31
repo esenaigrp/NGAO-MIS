@@ -17,6 +17,10 @@ export type Incident = {
   reported_by?: User;
   date_reported?: string;
   reporter_phone?: string;
+  reporter_email?: string;
+  reporter_name?: string;
+  reporter_statement?: string;
+  reporter_id_number?: string;
   assigned_to?: User;
   timestamp?: string;
   reference?: string;
@@ -24,6 +28,13 @@ export type Incident = {
   priority?: string;
   coordinates: any;
   notes: string;
+  witnesses: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    id_number?: string;
+    statement?: string;
+  }
 };
 
 interface IncidentsState {

@@ -25,8 +25,11 @@ const IncidentsPage: React.FC = () => {
   const [newIncident, setNewIncident] = useState<any>({
     title: "",
     description: "",
-    incident_type: "",
+    incident_type: "other",
+    reporter_name: "",
+    reporter_email: "",
     reporter_phone: "",
+    reporter_statement: "",
     location: "",
     area: selectedAreaId
   });
@@ -39,11 +42,35 @@ const IncidentsPage: React.FC = () => {
 
   const [mapOpen, setMapOpen] = useState(false);
   const [mapIncidents, setMapIncidents] = useState<any[]>([]);
+  const [witnesses, setWitnesses] = useState([{ name: '', email: '', phone: '', statement: '' }]);
+  const [showReporter, setShowReporter] = useState(false);
+  const [showWitnesses, setShowWitnesses] = useState(false);
 
   useEffect(() => {
     dispatch(fetchIncidents({ page, pageSize }));
     dispatch(fetchAdminUnits());
   }, [dispatch, page, pageSize]);
+
+
+  const handleAddWitness = () => {
+    if (!showWitnesses) {
+      setShowWitnesses(true);
+    }
+    setWitnesses([...witnesses, { name: '', email: '', phone: '', statement: '' }]);
+  };
+
+  const handleRemoveWitness = (index) => {
+    if (witnesses.length > 1) {
+      setWitnesses(witnesses.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleWitnessChange = (index, field, value) => {
+    const updatedWitnesses = witnesses.map((witness, i) =>
+      i === index ? { ...witness, [field]: value } : witness
+    );
+    setWitnesses(updatedWitnesses);
+  };
 
   const handleCreate = () => {
     if (!newIncident.title || !newIncident.description) {
@@ -51,16 +78,54 @@ const IncidentsPage: React.FC = () => {
       return;
     }
 
-    dispatch(createIncident(newIncident));
+    // Validate reporter if any reporter field is filled
+    const hasReporterData = newIncident.reporter_name || newIncident.reporter_email ||
+      newIncident.reporter_phone || newIncident.reporter_statement;
 
-    setNewIncident({
-      title: "",
-      description: "",
-      incident_type: "other",
-      reporter_phone: "",
-      location: "",
-      area: selectedAreaId
-    });
+    if (hasReporterData && (!newIncident.reporter_name || !newIncident.reporter_phone)) {
+      alert("Reporter name and phone are required when providing reporter information");
+      return;
+    }
+
+    // Validate witnesses - filter out empty witnesses and validate filled ones
+    const filledWitnesses = witnesses.filter(w =>
+      w.name || w.email || w.phone || w.statement
+    );
+
+    for (let i = 0; i < filledWitnesses.length; i++) {
+      if (!filledWitnesses[i].name || !filledWitnesses[i].phone) {
+        alert(`Witness ${i + 1}: Name and phone are required when providing witness information`);
+        return;
+      }
+    }
+
+    // Create incident with witnesses data
+    const incidentData = {
+      ...newIncident,
+      witnesses: filledWitnesses
+    };
+
+    dispatch(createIncident(incidentData))
+      .unwrap()
+      .then(() => {
+        // Reset form ONLY on success
+        setNewIncident({
+          title: "",
+          description: "",
+          incident_type: "other",
+          reporter_name: "",
+          reporter_email: "",
+          reporter_phone: "",
+          reporter_statement: "",
+          location: "",
+          area: selectedAreaId,
+        });
+
+        setWitnesses([{ name: "", email: "", phone: "", statement: "" }]);
+      })
+      .catch((error) => {
+        console.error("Incident creation failed:", error);
+      });
   };
 
   const handleUpdate = () => {
@@ -176,7 +241,7 @@ const IncidentsPage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Title */}
-          <div>
+          <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Title
             </label>
@@ -216,28 +281,8 @@ const IncidentsPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Phone */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Reporter Phone
-            </label>
-            <input
-              type="tel"
-              value={newIncident.reporter_phone}
-              onChange={(e) =>
-                setNewIncident({
-                  ...newIncident,
-                  reporter_phone: e.target.value,
-                })
-              }
-              placeholder="+2547…"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
           {/* Description */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Description
             </label>
@@ -260,6 +305,280 @@ const IncidentsPage: React.FC = () => {
           onSelectionChange={handleAreaSelectionChange}
           className="max-w-1xl mt-2"
         />
+
+        {/* Reporter Section */}
+        <div className="mb-6 border-t border-gray-200 pt-6">
+          <div
+            onClick={() => setShowReporter(!showReporter)}
+            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${showReporter ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'}`}>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Reporter Information
+                </h3>
+                <p className="text-xs text-gray-500">Optional - Click to add reporter details</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {showReporter && (
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  Active
+                </span>
+              )}
+              <svg
+                className={`h-5 w-5 text-gray-400 transition-transform ${showReporter ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {showReporter && (
+            <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newIncident.reporter_name || ''}
+                    onChange={(e) =>
+                      setNewIncident({ ...newIncident, reporter_name: e.target.value })
+                    }
+                    placeholder="Reporter's name"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newIncident.reporter_email || ''}
+                    onChange={(e) =>
+                      setNewIncident({ ...newIncident, reporter_email: e.target.value })
+                    }
+                    placeholder="reporter@example.com"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={newIncident.reporter_phone || ''}
+                    onChange={(e) =>
+                      setNewIncident({
+                        ...newIncident,
+                        reporter_phone: e.target.value,
+                      })
+                    }
+                    placeholder="+254..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+               focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Reporter Statement
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={newIncident.reporter_statement || ''}
+                    onChange={(e) =>
+                      setNewIncident({
+                        ...newIncident,
+                        reporter_statement: e.target.value,
+                      })
+                    }
+                    placeholder="Additional details from the reporter..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+               focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Witnesses Section */}
+        <div className="mb-6 border-t border-gray-200 pt-6">
+          <div className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+            <div
+              onClick={() => setShowWitnesses(!showWitnesses)}
+              className="flex items-center gap-3 flex-1 cursor-pointer"
+            >
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${showWitnesses ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'}`}>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Witness Information
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Optional - Click to add witness details
+                  {witnesses.length > 0 && witnesses.some(w => w.name || w.email || w.phone || w.statement) &&
+                    ` (${witnesses.filter(w => w.name || w.email || w.phone || w.statement).length} witness${witnesses.filter(w => w.name || w.email || w.phone || w.statement).length > 1 ? 'es' : ''})`
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {showWitnesses && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddWitness();
+                  }}
+                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  + Add Witness
+                </button>
+              )}
+              {showWitnesses && (
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  Active
+                </span>
+              )}
+              <svg
+                onClick={() => setShowWitnesses(!showWitnesses)}
+                className={`h-5 w-5 text-gray-400 transition-transform cursor-pointer ${showWitnesses ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {showWitnesses && (
+            <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+              {witnesses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500 mb-3">No witnesses added yet</p>
+                  <button
+                    type="button"
+                    onClick={handleAddWitness}
+                    className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  >
+                    + Add First Witness
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {witnesses.map((witness, index) => (
+                    <div key={index} className="mb-6 last:mb-0">
+                      {witnesses.length > 1 && (
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">
+                            Witness {index + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWitness(index)}
+                            className="text-xs text-red-600 hover:text-red-800 focus:outline-none font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Name
+                          </label>
+                          <input
+                            type="text"
+                            value={witness.name}
+                            onChange={(e) => handleWitnessChange(index, 'name', e.target.value)}
+                            placeholder="Witness's name"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={witness.email}
+                            onChange={(e) => handleWitnessChange(index, 'email', e.target.value)}
+                            placeholder="witness@example.com"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            value={witness.phone}
+                            onChange={(e) => handleWitnessChange(index, 'phone', e.target.value)}
+                            placeholder="+254..."
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="md:col-span-3">
+                          <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Witness Statement
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={witness.statement}
+                            onChange={(e) => handleWitnessChange(index, 'statement', e.target.value)}
+                            placeholder="What did the witness observe..."
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      {index < witnesses.length - 1 && (
+                        <div className="mt-4 border-b border-gray-200"></div>
+                      )}
+                    </div>
+                  ))}
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={handleAddWitness}
+                      className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+                    >
+                      + Add Another Witness
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="mt-6">
           <button

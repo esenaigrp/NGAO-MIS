@@ -18,6 +18,7 @@ class Incident(models.Model):
         ("on_scene", _("On Scene")),
         ("resolved", _("Resolved")),
         ("closed", _("Closed")),
+        ("urgent", _("Urgent"))
     ]
 
     TYPE_CHOICES = [
@@ -33,6 +34,10 @@ class Incident(models.Model):
 
     # Core fields
     reporter_phone = models.CharField(max_length=20)
+    reporter_email = models.CharField(null=True, blank=True)
+    reporter_name =  models.CharField(null=True, blank=True)
+    reporter_statement = models.TextField(null=True, blank=True)
+    reporter_id_number = models.CharField(null=True, blank=True)
     title = models.CharField(max_length=255, verbose_name=_("Title of Incident"))
     description = models.TextField(verbose_name=_("Detailed Description"))
     incident_type = models.CharField(max_length=50, choices=TYPE_CHOICES, default="other")
@@ -131,3 +136,19 @@ class Response(models.Model):
         super().save(*args, **kwargs)
         if self.incident.status not in ["resolved", "closed"]:
             self.incident.alert_next_handler()
+            
+class Witness(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    incident = models.ForeignKey(Incident, related_name="witnesses", on_delete=models.CASCADE)
+    name =  models.CharField(null=True, blank=True)
+    phone = models.CharField(max_length=20)
+    email = models.CharField(null=True, blank=True)
+    statement = models.TextField(null=True, blank=True)
+    id_number = models.CharField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"{self.name} - {self.phone}"
+

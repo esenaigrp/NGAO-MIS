@@ -17,12 +17,8 @@ class Communication(models.Model):
     title = models.CharField(max_length=200)
     body = models.TextField()
     type = models.CharField(max_length=3, choices=TYPE_CHOICES)
-    sender = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="sent_communications"
-    )
-    recipients = models.ManyToManyField(
-        User, blank=True, related_name="received_communications"
-    )
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="sent_communications")
+    recipients = models.ManyToManyField(User, blank=True, related_name="received_communications")
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
     admin_unit = models.ForeignKey(AdminUnit, on_delete=models.SET_NULL, null=True, blank=True)
     read_by = models.ManyToManyField(User, blank=True, related_name="read_communications")

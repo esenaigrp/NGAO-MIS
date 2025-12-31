@@ -22,7 +22,7 @@ from ngao_core.apps.accounts.permissions import (
 from django.contrib.gis.geos import Point
 from ngao_core.apps.accounts.models import OfficerProfile
 from ngao_core.apps.admin_structure.models import AdminUnit
-from .models import Incident, Response
+from .models import Incident, Response, Witness
 from ngao_core.apps.geography.models import Area
 from .permissions import IsReporterOrAbove
 from .serializers import IncidentSerializer, ResponseSerializer
@@ -70,6 +70,7 @@ class IncidentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         coordinates = None
         area_id = self.request.data.get("area")
+        witnesses = self.request.data.get("witnesses", [])
         area = None
 
         if area_id:
@@ -96,11 +97,24 @@ class IncidentViewSet(viewsets.ModelViewSet):
             except OfficerProfile.DoesNotExist:
                 pass
 
-        serializer.save(
+        incident = serializer.save(
             reported_by=user,
             area=area,
             coordinates=serializer.validated_data.get("coordinates", coordinates),
         )
+        
+            # ---------------------------------------
+        # 5. Create Witnesses
+        # ---------------------------------------
+        for witness in witnesses:
+            Witness.objects.create(
+                incident=incident,
+                name=witness.get("name"),
+                email=witness.get("email", ""),
+                phone=witness.get("phone", ""),
+                id_number=witness.get("id_number", ""),
+                statement=witness.get("statement", ""),
+            )
 
     # -------------------------
     # Custom actions
@@ -288,58 +302,6 @@ class IncidentViewSet(viewsets.ModelViewSet):
             "deaths": deaths,
             "marriages": marriages,
         })
-
-        # -------------------------
-        # Base queryset by role
-        # -------------------------
-        if user.is_staff or user.is_superuser:
-            # Admin: see everything
-            qs = Incident.objects.all()
-            assigned_qs = Incident.objects.all()
-        else:
-            # Non-admin: only incidents assigned to them
-            qs = Incident.objects.filter(current_handler=user)
-            assigned_qs = qs
-
-        # -------------------------
-        # Core counts
-        # -------------------------
-        total_incidents = qs.count()
-        open_incidents = qs.filter(status="reported").count()
-        resolved_incidents = qs.filter(status="resolved").count()
-        responses_count = Response.objects.count()
-
-        # -------------------------
-        # Detailed stats block
-        # -------------------------
-        stats = {
-            "open": open_incidents,
-            "urgent": qs.filter(status="urgent").count(),
-            "resolved_today": qs.filter(
-                status="resolved",
-                date_resolved__date=today,
-            ).count(),
-        }
-
-        # -------------------------
-        # Assigned incidents list
-        # -------------------------
-        assigned_data = IncidentSerializer(
-            assigned_qs,
-            many=True,
-            context={"request": request},
-        ).data
-
-        return DRFResponse(
-            {
-                "total_incidents": total_incidents,
-                "open_incidents": open_incidents,
-                "resolved_incidents": resolved_incidents,
-                "responses": responses_count,
-                "stats": stats,
-                "assigned": assigned_data,
-            }
-        )
 
 
 class ResponseViewSet(viewsets.ModelViewSet):

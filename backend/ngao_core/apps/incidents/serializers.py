@@ -4,7 +4,7 @@ from ngao_core.apps.accounts.serializers import UserSerializer
 from ngao_core.apps.admin_structure.serializers import AdminUnitSerializer
 from ngao_core.apps.geography.serializers import AreaSerializer
 from ngao_core.apps.admin_structure.models import AdminUnit
-from .models import Incident, Response
+from .models import Incident, Response, Witness
 
 class ResponseSerializer(serializers.ModelSerializer):
     """Serializer for incident response objects."""
@@ -17,6 +17,14 @@ class ResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Response
         fields = ["id", "incident", "responder", "comment", "timestamp"]
+
+class WitnessSerializer(serializers.ModelSerializer):
+    """Serializer for incident response objects."""
+
+    class Meta:
+        model = Witness
+        fields = ["id", "id_number", "name", "email", "phone", "statement", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class IncidentSerializer(serializers.ModelSerializer):
@@ -31,6 +39,7 @@ class IncidentSerializer(serializers.ModelSerializer):
     reported_by_name = serializers.ReadOnlyField(source="reported_by.username")
     location_name = serializers.ReadOnlyField(source="location.name", default=None)
     area = AreaSerializer(read_only=True)
+    witnesses = WitnessSerializer(many=True, read_only=True)
 
     class Meta:
         model = Incident
@@ -46,12 +55,17 @@ class IncidentSerializer(serializers.ModelSerializer):
             "reported_by",
             "current_handler",
             "reporter_phone",
+            "reporter_name",
+            "reporter_email",
+            "reporter_statement",
+            "reporter_id_number",
             "location",
             "area",
             "location_name",
             "reported_by_name",
             "responses",
             "reported_at",
+            "witnesses",
         ]
         read_only_fields = ("id", "date_reported")
 

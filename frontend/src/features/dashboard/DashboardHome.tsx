@@ -8,6 +8,7 @@ import { loadDashboard } from "../../store/slices/dashboardSlice";
 import IncidentStatistics from "./IncidentStatistics";
 import VitalStatistics from "./VitalStatistics";
 import IncidentMapModal from "../incidents/IncidentsMapModal";
+import CompactAreaSelector from "../../components/CompactAreaSelector";
 
 
 const DashboardHome: React.FC = () => {
@@ -130,6 +131,10 @@ const DashboardHome: React.FC = () => {
       <FaChevronDown className="ml-1 inline h-4 w-4" />;
   };
 
+  const handleAreaFilterChange = (areaId: string | null, area: any | null) => {
+    console.log("fileter:", areaId);
+  };
+
   return (
     <div className="min-h-screen">
       <div className="p-6 space-y-8">
@@ -145,6 +150,10 @@ const DashboardHome: React.FC = () => {
 
         {/* KPI Cards */}
         <div className="mx-auto">
+          <CompactAreaSelector
+            onSelectionChange={handleAreaFilterChange}
+            className="max-w-1xl mt-3 mb-3"
+          />
           <IncidentStatistics
             data={data?.incidents}
             onCardClick={() => setShowIncidentMap(true)}

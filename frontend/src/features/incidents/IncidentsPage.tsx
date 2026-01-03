@@ -13,6 +13,7 @@ import { FaChevronUp, FaChevronDown, FaSearch } from "react-icons/fa";
 import CompactAreaSelector from "../../components/CompactAreaSelector";
 import { Area } from "../../store/slices/areasSlice";
 import IncidentMapModal from "./IncidentsMapModal";
+import { printIncidentPdf } from "../../utils/printIncidentPdf";
 
 const IncidentsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -703,6 +704,12 @@ const IncidentsPage: React.FC = () => {
                         {new Date(incident.date_reported).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 space-x-2">
+                        <button
+                          onClick={() => printIncidentPdf(incident)}
+                          className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 cursor-pointer"
+                        >
+                          Print
+                        </button>
                         <button
                           onClick={() => openSingleIncidentMap(incident)}
                           className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 cursor-pointer"

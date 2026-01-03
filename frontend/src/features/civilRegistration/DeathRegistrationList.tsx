@@ -18,6 +18,9 @@ interface DeathRecordForm {
   status: "submitted" | "approved" | "rejected";
   approved_at?: string;
   area?: string;
+  age?: string;
+  comments?: string;
+  gender?: string;
 }
 
 const DeathRegistrationList: React.FC = () => {
@@ -34,7 +37,10 @@ const DeathRegistrationList: React.FC = () => {
     reference_number: "",
     status: "submitted",
     approved_at: "",
-    citizen_display: ""
+    citizen_display: "",
+    age: "",
+    comments: "",
+    gender: ""
   });
 
   const [editingDeath, setEditingDeath] = useState<DeathRecordForm | null>(null);
@@ -54,23 +60,30 @@ const DeathRegistrationList: React.FC = () => {
   }, [dispatch]);
 
   const handleCreate = () => {
-    dispatch(createDeath(newDeath));
-    setNewDeath({
-      citizen: "",
-      date_of_death: "",
-      place_of_death: "",
-      cause_of_death: "",
-      initiated_by: "",
-      reference_number: "",
-      status: "submitted",
-      approved_at: "",
-      citizen_display: "",
-      area: selectedAreaId
-    });
-    setCitizenSearch("");
+    dispatch(createDeath(newDeath))
+      .unwrap()
+      .then(() => {
+        setNewDeath({
+          citizen: "",
+          date_of_death: "",
+          place_of_death: "",
+          cause_of_death: "",
+          initiated_by: "",
+          reference_number: "",
+          status: "submitted",
+          approved_at: "",
+          citizen_display: "",
+          area: "",
+          age: "",
+          comments: "",
+          gender: ""
+        });
+        setCitizenSearch("");
+      })
+      .catch((error) => {
+        console.error("Death creation failed:", error);
+      });
   };
-
-  console.log("citizens:", citizens);
 
   const handleUpdate = () => {
     if (!editingDeath) return;
@@ -223,6 +236,52 @@ const DeathRegistrationList: React.FC = () => {
               placeholder="Optional"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
                          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Gender
+            </label>
+            <select
+              value={newDeath.gender}
+              onChange={(e) => setNewDeath({ ...newDeath, gender: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+               focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Age at Death
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={newDeath.age}
+              onChange={(e) => setNewDeath({ ...newDeath, age: e.target.value })}
+              placeholder="Age in years"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+               focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Comments / Additional Notes
+            </label>
+            <textarea
+              rows={3}
+              value={newDeath.comments}
+              onChange={(e) => setNewDeath({ ...newDeath, comments: e.target.value })}
+              placeholder="Additional remarks (optional)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+               focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

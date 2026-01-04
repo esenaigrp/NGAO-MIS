@@ -12,7 +12,7 @@ class Citizen(models.Model):
     )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    id_number = models.CharField(max_length=20, unique=True, db_index=True, null=True, blank=True)
+    id_number = models.CharField(max_length=20, db_index=True, null=True, blank=True)
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)

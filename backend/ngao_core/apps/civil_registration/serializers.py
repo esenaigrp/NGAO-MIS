@@ -6,6 +6,9 @@ from .models import (
     MarriageRegistration
 )
 from ngao_core.apps.citizen_repo.models import Citizen
+from ngao_core.apps.citizen_repo.serializers import CitizenSerializer
+from ngao_core.apps.geography.serializers import AreaSerializer
+from ngao_core.apps.accounts.serializers import UserSerializer
 
 
 # ---------- Registration Request Serializer ----------
@@ -38,24 +41,61 @@ class RegistrationRequestSerializer(serializers.ModelSerializer):
 
 # ---------- Birth Registration Serializer ----------
 class BirthRegistrationSerializer(serializers.ModelSerializer):
+    # Nested read serializers for displaying related data
+    child = CitizenSerializer(read_only=True)
+    mother = CitizenSerializer(read_only=True)
+    father = CitizenSerializer(read_only=True)
+    initiated_by = UserSerializer(read_only=True)
+    area = AreaSerializer(read_only=True)
+    
     class Meta:
         model = BirthRegistration
-        fields = "__all__"
-        read_only_fields = ["reference_number", "status", "approved_at"]
-
-    def validate(self, data):
-        # Ensure child is linked to registration request
-        if "child" not in data or not data["child"]:
-            raise serializers.ValidationError("Child must be selected from Citizen repository.")
-        return data
+        fields = [
+            'id', 
+            'reference_number', 
+            'status', 
+            'child', 
+            'mother', 
+            'father', 
+            'area', 
+            'initiated_by',
+            'child', 
+            'mother', 
+            'father',
+            'area', 
+            'initiated_by',
+            'place_of_birth',
+            'date_of_birth', 
+            'gender',
+            'approved_at',
+            'created_at',
+        ]
 
 
 # ---------- Death Registration Serializer ----------
 class DeathRegistrationSerializer(serializers.ModelSerializer):
+    # Nested read serializers for displaying related data
+    citizen = CitizenSerializer(read_only=True)
+    initiated_by = UserSerializer(read_only=True)
+    area = AreaSerializer(read_only=True)
+    
     class Meta:
         model = DeathRegistration
-        fields = "__all__"
-        read_only_fields = ["reference_number", "status", "approved_at"]
+        fields = [
+            'id', 
+            'reference_number', 
+            'status',
+            'citizen', 
+            'area', 
+            'initiated_by',            
+            'date_of_death', 
+            'place_of_death', 
+            'cause_of_death',
+            'age', 
+            'comments',
+            'approved_at',
+            'created_at', 
+        ]
 
     def validate(self, data):
         citizen = data.get("citizen")

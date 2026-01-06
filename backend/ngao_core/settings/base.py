@@ -151,24 +151,24 @@ CORS_ALLOWED_ORIGINS: List[str] = []
 # CSRF
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
-# https and reverse proxy support
-SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False") == "True"
+# # https and reverse proxy support
+# SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False") == "True"
 
-SECURE_PROXY_SSL_HEADER = tuple(os.getenv("SECURE_PROXY_SSL_HEADER", "").split(",")) or None
+# SECURE_PROXY_SSL_HEADER = tuple(os.getenv("SECURE_PROXY_SSL_HEADER", "").split(",")) or None
 
-# secure cookies
-CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False") == "True"
-SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False") == "True"
+# # secure cookies
+# CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False") == "True"
+# SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False") == "True"
 
-# HTTP Strict Transport Security (HSTS)
-SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", 0))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = (os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False") == "True")
-SECURE_HSTS_PRELOAD = (os.getenv("SECURE_HSTS_PRELOAD", "False") == "True")
+# # HTTP Strict Transport Security (HSTS)
+# SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", 0))
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = (os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False") == "True")
+# SECURE_HSTS_PRELOAD = (os.getenv("SECURE_HSTS_PRELOAD", "False") == "True")
 
-# security headers
-SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = "DENY"
+# # security headers
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_BROWSER_XSS_FILTER = True
+# X_FRAME_OPTIONS = "DENY"
 
 # --------------------------------------------------
 # Logging

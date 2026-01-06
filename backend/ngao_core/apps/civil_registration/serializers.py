@@ -74,16 +74,14 @@ class BirthRegistrationSerializer(serializers.ModelSerializer):
 
 # ---------- Death Registration Serializer ----------
 class DeathRegistrationSerializer(serializers.ModelSerializer):
-    # Nested read serializers for displaying related data
     citizen = CitizenSerializer(read_only=True)
     initiated_by = UserSerializer(read_only=True)
     area = AreaSerializer(read_only=True)
-    
+
     class Meta:
         model = DeathRegistration
         fields = [
             'id', 
-            'reference_number', 
             'status',
             'citizen', 
             'area', 
@@ -96,12 +94,13 @@ class DeathRegistrationSerializer(serializers.ModelSerializer):
             'approved_at',
             'created_at', 
         ]
+        read_only_fields = [
+            "reference_number",
+            "status",
+            "approved_at",
+            "created_at",
+        ]
 
-    def validate(self, data):
-        citizen = data.get("citizen")
-        if not citizen.is_alive:
-            raise serializers.ValidationError(f"Citizen {citizen} is already marked deceased.")
-        return data
 
 
 # ---------- Marriage Registration Serializer ----------

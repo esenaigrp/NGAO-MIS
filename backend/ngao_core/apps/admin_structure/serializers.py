@@ -16,9 +16,7 @@ class AdminUnitSerializer(GeoFeatureModelSerializer):
             'id', 
             'name', 
             'code', 
-            'unit_type', 
             'parent', 
-            'hierarchy_level', 
-            'geometry', # Include geometry for GeoJSON output
-            'centroid' # Optional: Include centroid field
+            # 'geometry', # Include geometry for GeoJSON output
+            # 'centroid' # Optional: Include centroid field
         )

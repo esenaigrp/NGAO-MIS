@@ -1,0 +1,29 @@
+services:
+  ngaodb:
+    image: postgis/postgis:15-3.4
+    container_name: ngao_database
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  ngaoweb:
+    build: .
+    container_name: ngao_api
+    command: gunicorn ngao_core.wsgi:application --bind 0.0.0.0:8200
+    volumes:
+      - .:/app
+    ports:
+      - "8200:8200"
+    env_file:
+      - .env
+    depends_on:
+      - ngaodb
+
+volumes:
+  postgres_data:

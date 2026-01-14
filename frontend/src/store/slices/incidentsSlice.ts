@@ -1,18 +1,40 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "../../api/axiosClient";
+import { User } from "./usersSlice";
+import { Area } from "./areasSlice";
 
 /* ============================
    TYPES
 ============================ */
 export type Incident = {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   incident_type?: string;
   status?: string;
   location?: any;
-  reported_by?: string;
+  area?: Area;
+  reported_by?: User;
+  date_reported?: string;
+  reporter_phone?: string;
+  reporter_email?: string;
+  reporter_name?: string;
+  reporter_statement?: string;
+  reporter_id_number?: string;
+  assigned_to?: User;
   timestamp?: string;
+  reference?: string;
+  category?: string;
+  priority?: string;
+  coordinates: any;
+  notes: string;
+  witnesses: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    id_number?: string;
+    statement?: string;
+  }
 };
 
 interface IncidentsState {
@@ -22,6 +44,13 @@ interface IncidentsState {
   total: number;
   page: number;
   pageSize: number;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  stats?: {
+    open: number;
+    urgent: number;
+    resolved_today?: number;
+  };
+  assigned?: Incident[];
 }
 
 const initialState: IncidentsState = {
@@ -31,6 +60,13 @@ const initialState: IncidentsState = {
   total: 0,
   page: 1,
   pageSize: 10,
+  status: "idle",
+  stats: {
+    open: 0,
+    urgent: 0,
+    resolved_today: 0,
+  },
+  assigned: [],
 };
 
 /* ============================
@@ -114,7 +150,7 @@ export const updateIncident = createAsyncThunk(
 
 export const deleteIncident = createAsyncThunk(
   "incidents/delete",
-  async (id: number, { rejectWithValue }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/incidents/${id}/`);
       return id;

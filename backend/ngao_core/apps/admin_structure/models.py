@@ -31,83 +31,87 @@ class UnitLevel(models.TextChoices):
     LOCATION = "LOCATION", _("Location")
     SUB_LOCATION = "SUB_LOCATION", _("Sub-location")
 
+
 level = models.CharField(
-        max_length=24, choices=UnitLevel.choices, default=UnitLevel.LOCATION
-    )
+    max_length=24, choices=UnitLevel.choices, default=UnitLevel.LOCATION
+)
 
 parent = models.ForeignKey(
-        "self",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="children",
-    )
+    "self",
+    null=True,
+    blank=True,
+    on_delete=models.SET_NULL,
+    related_name="children",
+)
 
-    # Main polygon for mapping
+# Main polygon for mapping
 geometry = geomodels.GeometryField(
-        null=True,
-        blank=True,
-        srid=4326,
-        help_text="GeoJSON polygon/multipolygon for administrative boundary"
-    )
+    null=True,
+    blank=True,
+    srid=4326,
+    help_text="GeoJSON polygon/multipolygon for administrative boundary",
+)
 
-    # Auto-calculated centroid point
+# Auto-calculated centroid point
 centroid = geomodels.PointField(
-        null=True,
-        blank=True,
-        srid=4326,
-        help_text="Automatically generated centroid of the geometry"
-    )
-
+    null=True,
+    blank=True,
+    srid=4326,
+    help_text="Automatically generated centroid of the geometry",
+)
+id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 notes = models.TextField(blank=True, null=True)
 created_at = models.DateTimeField(default=timezone.now)
 
+
 class Meta:
-        verbose_name = "Administrative Unit"
-        verbose_name_plural = "Administrative Units"
-        ordering = ("level", "name")
-        indexes = [
-            models.Index(fields=["code"]),
-            BrinIndex(fields=["created_at"]),
-        ]
+    verbose_name = "Administrative Unit"
+    verbose_name_plural = "Administrative Units"
+    ordering = ("level", "name")
+    indexes = [
+        models.Index(fields=["code"]),
+        BrinIndex(fields=["created_at"]),
+    ]
+
 
 def __str__(self):
-        return f"{self.name} ({self.get_level_display()})"
+    return f"{self.name} ({self.get_level_display()})"
 
-    # -----------------------------
-    # VALIDATION LOGIC
-    # -----------------------------
+
+# -----------------------------
+# VALIDATION LOGIC
+# -----------------------------
 def clean(self):
-        # Ensure polygon is valid GeoJSON
-        if self.geometry:
-            try:
-                if isinstance(self.geometry, str):
-                    self.geometry = GEOSGeometry(self.geometry)
+    # Ensure polygon is valid GeoJSON
+    if self.geometry:
+        try:
+            if isinstance(self.geometry, str):
+                self.geometry = GEOSGeometry(self.geometry)
 
-                if not self.geometry.valid:
-                    raise ValidationError("Geometry is not a valid polygon.")
-            except Exception as e:
-                raise ValidationError(f"Invalid geometry: {e}")
+            if not self.geometry.valid:
+                raise ValidationError("Geometry is not a valid polygon.")
+        except Exception as e:
+            raise ValidationError(f"Invalid geometry: {e}")
 
-    # ----------------------------------------------
-    # SAVE HOOK – auto compute centroid from polygon
-    # ----------------------------------------------
+
+# ----------------------------------------------
+# SAVE HOOK – auto compute centroid from polygon
+# ----------------------------------------------
 def save(self, *args, **kwargs):
-        if self.geometry:
-            try:
-                # Compute centroid as GEOSGeometry object
-                centroid_geom = self.geometry.centroid
+    if self.geometry:
+        try:
+            # Compute centroid as GEOSGeometry object
+            centroid_geom = self.geometry.centroid
 
             # Convert to actual Point for frontend mapping
-                self.centroid = Point(
-                    centroid_geom.x,
-                    centroid_geom.y,
-                    srid=self.geometry.srid
+            self.centroid = Point(
+                centroid_geom.x, centroid_geom.y, srid=self.geometry.srid
             )
-            except Exception:
-             pass
+        except Exception:
+            pass
 
-        super().save(*args, **kwargs)
+    super().save(*args, **kwargs)
+
 
 class AdminUnit(models.Model):
     """
@@ -115,7 +119,7 @@ class AdminUnit(models.Model):
     Supports PostGIS geometry for mapping.
     """
 
-    UID = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(
         max_length=255,
         help_text="Official name of unit (e.g., Nairobi County)",
@@ -165,13 +169,14 @@ class AdminUnit(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.get_level_display()})"
+        return f"{self.name}"
 
 
 # =========================================================
 # SIMPLE LOCATION MODEL (IF STILL NEEDED)
 # =========================================================
 class Location(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     geometry = geomodels.PolygonField(
         blank=True,
@@ -182,4 +187,3 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
-

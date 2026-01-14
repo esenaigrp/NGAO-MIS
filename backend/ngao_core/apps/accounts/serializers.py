@@ -8,9 +8,15 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from ngao_core.apps.accounts.models import (ContactPoint, CustomUser, OfficerProfile, Role)
+from ngao_core.apps.accounts.models import (
+    ContactPoint,
+    CustomUser,
+    OfficerProfile,
+    Role,
+)
 from ngao_core.apps.admin_structure.models import AdminUnit
 from .models import Device, DeviceApprovalRequest
+from ngao_core.apps.geography.serializers import AreaSerializer
 
 
 User = get_user_model()
@@ -19,27 +25,36 @@ User = get_user_model()
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'email', 'first_name', 'last_name', 'is_active', 'is_staff')
-        read_only_fields = ('is_staff', 'is_active', 'is_superuser', 'last_login', 'date_joined')
+        fields = ("id", "email", "first_name", "last_name", "is_active", "is_staff")
+        read_only_fields = (
+            "is_staff",
+            "is_active",
+            "is_superuser",
+            "last_login",
+            "date_joined",
+        )
+
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = ["id", "name", "description", "level"]
+        fields = ["id", "name", "description", "hierarchy_level"]
 
 
 class AdminUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdminUnit
-        fields = ["id", "name", "unit_type", "parent", "code"]
+        fields = ["id", "name", "parent", "code"]
 
 
 class UserSerializer(serializers.ModelSerializer):
+    role = RoleSerializer(read_only=True)
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name"]
-    
+        fields = ["id", "email", "first_name", "last_name", "role", "date_joined"]
+
     read_only_fields = ["id", "date_joined"]
+
 
 class ContactPointSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,41 +69,44 @@ class ContactPointSerializer(serializers.ModelSerializer):
             "officer",
             "phone_number",
             "email",
-            ]
-        
+        ]
+
+
 class OfficerProfileSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source="user_email", read_only=True)
-    role = RoleSerializer(read_only=True)
+    user = UserSerializer()
+    # role = RoleSerializer(read_only=True)
+    admin_unit = AdminUnitSerializer(read_only=True)
     contact_points = ContactPointSerializer(many=True, read_only=True)
+    area = AreaSerializer(read_only=True)
 
     class Meta:
         model = OfficerProfile
         fields = (
             "id",
-            "user_email",
-            "role",
+            "user",
             "badge_number",
             "phone",
-            "official_email",
+            "office_email",
             "location",
+            "area",
             "is_active",
-            "contact_points",
+            "contact_points",           
             "created_at",
-            "rank",
+            # "rank",
             "admin_unit",
-            )
+        )
 
     # Redefining the related fields outside of the Meta class for clarity (Standard DRF practice)
-    role_id = serializers.PrimaryKeyRelatedField(
-        source="role", queryset=Role.objects.all(), write_only=True, required=False
-    )
-    admin_unit_id = serializers.PrimaryKeyRelatedField(
-        source="admin_unit",
-        queryset=AdminUnit.objects.all(),
-        write_only=True,
-        required=False,
-    )
-    
+    # role_id = serializers.PrimaryKeyRelatedField(
+    #     source="role", queryset=Role.objects.all(), write_only=True, required=False
+    # )
+    # admin_unit_id = serializers.PrimaryKeyRelatedField(
+    #     source="admin_unit",
+    #     queryset=AdminUnit.objects.all(),
+    #     write_only=True,
+    #     required=False,
+    # )
+
     # Second Meta definition removed, using the first one's fields structure.
     # The fields list at the end of the original OfficerProfileSerializer was confusing.
 
@@ -96,24 +114,26 @@ class OfficerProfileSerializer(serializers.ModelSerializer):
 class IncidentSummarySerializer(serializers.ModelSerializer):
     location_name = serializers.CharField(source="location.name", read_only=True)
     reported_by = serializers.CharField(source="reported_by.email", read_only=True)
-    
+
     class Meta:
         model = Incident
-        fields = ("id",
-                  "title",
-                  "incident_type",
-                  "status",
-                  "location",
-                  "location_name",
-                  "date_reported",
-                  "reported_by",
-                  )
-        
+        fields = (
+            "id",
+            "title",
+            "incident_type",
+            "status",
+            "location",
+            "location_name",
+            "date_reported",
+            "reported_by",
+        )
+
+
 # ----------------------------------------------------------------------
 # 🔑 LOGIN/TOKEN SERIALIZER (FIXED AND CONSOLIDATED)
-# --------------------------------------------------------------------   
+# --------------------------------------------------------------------
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
+    username_field = "email"
 
     @classmethod
     def get_token(cls, user):
@@ -124,8 +144,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # --- CUSTOM AUTH WITH EMAIL ---
         credentials = {
-            'email': attrs.get('email'),
-            'password': attrs.get('password'),
+            "email": attrs.get("email"),
+            "password": attrs.get("password"),
         }
 
         user = authenticate(**credentials)
@@ -141,18 +161,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # --- ADD USER PAYLOAD ---
         data["user"] = {
-             "id": self.user.user_id,
-             "email": self.user.email,
-             "first_name": self.user.first_name,
-             "last_name": self.user.last_name,
-             "role": self.user.role,
+            "id": self.user.id,
+            "email": self.user.email,
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "role": self.user.role.name if self.user.role else None,
         }
 
         return data
 
-
-        
-    
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = User.EMAIL_FIELD  # login with email
@@ -172,20 +189,51 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             "last_name": getattr(user, "last_name", ""),
         }
         return data
-    
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = "__all__"
+        fields = (
+            "id",
+            "user_id",
+            "device_name",
+            "device_number",
+            "device_type",
+            "last_ip",
+            "last_login_at",
+            "is_active",
+            "is_trusted",
+            "allowed_lat",
+            "allowed_lon",
+            "allowed_radius_meters",
+            "created_at"
+        )
+
 
 class DeviceApprovalRequestSerializer(serializers.ModelSerializer):
     device = DeviceSerializer(read_only=True)
+    requested_by = UserSerializer(read_only=True)
 
     class Meta:
         model = DeviceApprovalRequest
-        fields = "__all__"
+        fields = (
+            "id",
+            "device",
+            "status",
+            "requested_by",
+            "created_at",
+            "approved_at",
+        )
+
 
 class DeviceApprovalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ["user_id", "is_trusted", "allowed_lat", "allowed_lon", "allowed_radius_meters"]
+        fields = [
+            "user_id",
+            "is_trusted",
+            "allowed_lat",
+            "allowed_lon",
+            "allowed_radius_meters",
+        ]

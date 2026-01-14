@@ -1,17 +1,24 @@
-// src/store/slices/authSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { setAccessToken, setRefreshToken, clearTokens, getAccessToken, getRefreshToken } from "../../auth/tokenStorage";
-import axios from "axios";
+import api from "../../api/axiosClient";
 
 // ---------------------
 // User Type
 // ---------------------
+
+interface Role {
+  id: string;
+  name: string;
+  hierarchy_level: number;
+  description: string;
+}
 export interface User {
   user_id?: string;
   email?: string;
+  avatar?: string;
   first_name?: string;
   last_name?: string;
-  role?: string;
+  role?: Role;
   allowed_area_codes?: string[];
 }
 
@@ -53,16 +60,14 @@ export const login = createAsyncThunk<
 >("auth/login", async ({ email, password }, thunkAPI) => {
   try {
     // Login
-    const res = await axios.post("http://127.0.0.1:8000/api/accounts/login/", { email, password });
+    const res = await api.post("/accounts/login/", { email, password });
     const tokens = res.data;
 
     setAccessToken(tokens.access);
     setRefreshToken(tokens.refresh);
 
     // Fetch user profile
-    const profileRes = await axios.get("http://127.0.0.1:8000/api/accounts/me/", {
-      headers: { Authorization: `Bearer ${tokens.access}` },
-    });
+    const profileRes = await api.get("/accounts/me/");
 
     return { access: tokens.access, refresh: tokens.refresh, user: profileRes.data };
   } catch (err: any) {
@@ -82,9 +87,7 @@ export const checkAuth = createAsyncThunk(
     }
 
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/accounts/me/", {
-        headers: { Authorization: `Bearer ${access}` },
-      });
+      const res = await api.get("/accounts/me/");
       return { user: res.data, accessToken: access, refreshToken: refresh };
     } catch {
       clearTokens();

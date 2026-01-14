@@ -1,7 +1,9 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from ngao_core.apps.citizen_repo.models import Citizen
+from ngao_core.apps.geography.models import Area
 
 User = settings.AUTH_USER_MODEL
 
@@ -38,6 +40,7 @@ class RegistrationRequest(models.Model):
     verified_by_chief = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="verified_requests"
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
     chief_verification_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="pending_verification")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -73,6 +76,7 @@ class BirthRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     child = models.OneToOneField(
         Citizen,
         on_delete=models.SET_NULL,
@@ -101,6 +105,7 @@ class BirthRegistration(models.Model):
         null=True,
         related_name="births_initiated"
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     reference_number = models.CharField(max_length=30, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -128,6 +133,7 @@ class DeathRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     citizen = models.ForeignKey(
         Citizen,
         on_delete=models.PROTECT,
@@ -141,9 +147,13 @@ class DeathRegistration(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
     reference_number = models.CharField(max_length=30, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
+    age = models.BigIntegerField(default=0)
+    comments = models.TextField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
 
     def save(self, *args, **kwargs):
         if not self.reference_number:
@@ -168,6 +178,7 @@ class MarriageRegistration(models.Model):
         ("rejected", "Rejected"),
     )
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     spouse_1 = models.ForeignKey(
         Citizen,
         on_delete=models.PROTECT,
@@ -185,6 +196,8 @@ class MarriageRegistration(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL)
+    venue_of_marriage = models.CharField(null=True, blank=True)
     reference_number = models.CharField(max_length=30, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
     approved_at = models.DateTimeField(null=True, blank=True)

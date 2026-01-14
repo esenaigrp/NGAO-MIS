@@ -51,7 +51,7 @@ router.register(r"officers", OfficerProfileViewSet, basename="officer")
 router.register(r"contacts", ContactPointViewSet, basename="contact")
 
 # ADMIN STRUCTURE
-router.register(r"units", AdminUnitViewSet, basename="unit")
+router.register(r"admin-units", AdminUnitViewSet, basename="unit")
 router.register(r"locations", LocationViewSet, basename="location")
 
 # INCIDENTS
@@ -77,7 +77,7 @@ urlpatterns = [
     path("api/accounts/", include("ngao_core.apps.accounts.urls")),
 
     # Other apps
-    path("api/admin-structure/", include("ngao_core.apps.admin_structure.urls")),
+    path("api/admin-units/", include("ngao_core.apps.admin_structure.urls")),
     path("api/dashboard/", include("ngao_core.apps.dashboard.urls")),
     path("api/incidents/", include("ngao_core.apps.incidents.urls")),
     path("api/geography/", include("ngao_core.apps.geography.urls")),
@@ -85,7 +85,9 @@ urlpatterns = [
     path("api/citizens/", include("ngao_core.apps.citizen_repo.urls")),
     path("api/dashboard/", include("ngao_core.apps.dashboard.urls")),
 
-
+    path("api/registrations/", include("ngao_core.apps.civil_registration.urls")),
+    
+    path("api/geography/", include("ngao_core.apps.geography.urls")),
 
     # JWT helpers (optional if not already inside accounts)
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

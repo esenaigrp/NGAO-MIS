@@ -1,20 +1,27 @@
-// src/store/store.ts
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
-import areasReducer from "./slices/areasSlice"; // your AreaState slice
+import areasReducer from "./slices/areasSlice";
 import usersReducer from "./slices/usersSlice"; 
 import incidentsReducer from "./slices/incidentsSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import devicesReducer from "./slices/devicesSlice";
+import officersReducer from "./slices/officersSlice";
+import civilReducer from "./slices/civilSlice";
+import adminUnitsReducer from "./slices/adminStructureSlice";
+import citizenReducer from "./slices/citizenSlice";
 
 export const store = configureStore({
   reducer: {
-    auth: authReducer,     // ✅ Auth slice
+    auth: authReducer,
     areas: areasReducer,
     users: usersReducer,
     incidents: incidentsReducer,
     dashboard: dashboardReducer,
     devices: devicesReducer,
+    officers: officersReducer,
+    civil: civilReducer,
+    adminUnits: adminUnitsReducer,
+    citizens: citizenReducer
   },
 });
 

@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Single axios instance
 const authApi = axios.create({
-  baseURL: "http://127.0.0.1:8000", // your backend
+  baseURL: "http://127.0.0.1:8200", // your backend
   headers: {
     "Content-Type": "application/json",
   },

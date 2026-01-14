@@ -1,6 +1,8 @@
 // src/store/slices/officersSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import authApi from "../../api/axiosClient";
+import { AdminUnit } from "./adminStructureSlice";
+import { Area } from "recharts";
 
 // -------------------------
 // Types
@@ -11,28 +13,27 @@ export interface Role {
   description?: string;
 }
 
-export interface AdminUnit {
-  uid: string;
-  name: string;
-  unit_type?: string;
-  code?: string;
-}
-
 export interface User {
-  user_id: string;
+  id: string;
   email: string;
   first_name: string;
   last_name: string;
+  role?: Role
 }
 
 export interface Officer {
-  uid: string;
+  id: string;
   user: User;
   role_text?: string;
   role?: Role;
   badge_number?: string;
+  id_number?: string;
   admin_unit?: AdminUnit | string | null;
   phone?: string;
+  is_active: boolean;
+  notes?: string;
+  office_email?: string;
+  area?: Area;
 }
 
 // -------------------------
@@ -198,7 +199,7 @@ const officersSlice = createSlice({
       
       .addCase(updateOfficer.fulfilled, (state, action) => {
         const index = state.officers.findIndex(
-          (o) => o.uid === action.payload.uid
+          (o) => o.id === action.payload.id
         );
         
         if (index !== -1) state.officers[index] = action.payload;
@@ -206,7 +207,7 @@ const officersSlice = createSlice({
       
       .addCase(toggleOfficerStatus.fulfilled, (state, action) => {
         const index = state.officers.findIndex(
-          (o) => o.uid === action.payload.uid
+          (o) => o.id === action.payload.id
         );
         
         if (index !== -1) state.officers[index] = action.payload;
@@ -214,7 +215,7 @@ const officersSlice = createSlice({
       
       .addCase(assignOfficerRole.fulfilled, (state, action) => {
         const index = state.officers.findIndex(
-          (o) => o.uid === action.payload.uid
+          (o) => o.id === action.payload.id
         );
         
         if (index !== -1) state.officers[index] = action.payload;
@@ -222,7 +223,7 @@ const officersSlice = createSlice({
       
       .addCase(assignOfficerAdminUnit.fulfilled, (state, action) => {
         const index = state.officers.findIndex(
-          (o) => o.uid === action.payload.uid
+          (o) => o.id === action.payload.id
         );
         
         if (index !== -1) state.officers[index] = action.payload;
@@ -230,7 +231,7 @@ const officersSlice = createSlice({
       
       .addCase(deleteOfficer.fulfilled, (state, action) => {
         state.officers = state.officers.filter(
-          (o) => o.uid !== action.payload
+          (o) => o.id !== action.payload
         );
       });
   },

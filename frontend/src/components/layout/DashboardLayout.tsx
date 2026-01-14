@@ -1,37 +1,40 @@
-// src/routes/AppRoutes.tsx
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "../../routes/ProtectedRoute";
-
-import DashboardHome from "../../features/dashboard/DashboardHome";
-import OfficersPage from "../../features/officers/OfficersPage";
-import IncidentsPage from "../../features/incidents/IncidentsPage";
-import BirthRegistrationList from "../../features/civilRegistration/BirthRegistrationList";
-import DeathRegistrationList from "../../features/civilRegistration/DeathRegistrationList";
-import MarriageRegistrationList from "../../features/civilRegistration/MarriageRegistrationList";
-import LoginPage from "../../features/auth/LoginPage";
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
-const AppRoutes: React.FC = () => (
-  <Routes>
-    <Route path="/login" element={<LoginPage />} />
-    
-    {/* Protected dashboard routes */}
-    <Route element={<ProtectedRoute />}>
-      <Route path="/dashboard" element={<DashboardHome />} />
-      <Route path="/dashboard/officers" element={<OfficersPage />} />
-      <Route path="/dashboard/incidents" element={<IncidentsPage />} />
+const DashboardLayout: React.FC = () => {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-      {/* Civil Registrations */}
-      <Route path="/dashboard/births" element={<BirthRegistrationList />} />
-      <Route path="/dashboard/deaths" element={<DeathRegistrationList />} />
-      <Route path="/dashboard/marriages" element={<MarriageRegistrationList />} />
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
 
-      {/* Default redirect */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Route>
-  </Routes>
-);
+      {/* Sidebar */}
+      <Sidebar 
+        isOpen={isMobileSidebarOpen} 
+        onClose={() => setIsMobileSidebarOpen(false)} 
+      />
 
-export default AppRoutes;
+      {/* Main content */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Topbar */}
+        <Topbar onMenuClick={() => setIsMobileSidebarOpen(true)} />
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardLayout;
+

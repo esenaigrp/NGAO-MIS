@@ -14,7 +14,7 @@ PROJECT_STATUS = [
 ]
 
 class Project(models.Model):
-    uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
     description = models.TextField()
     budget = models.DecimalField(max_digits=12, decimal_places=2)
@@ -29,6 +29,7 @@ class Project(models.Model):
         return self.title
 
 class Milestone(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="milestones")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)

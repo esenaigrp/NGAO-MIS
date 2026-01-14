@@ -1,4 +1,3 @@
-# ngao_core/apps/civil_registration/services/iprs.py
 import requests
 
 IPRS_API_URL = "https://iprs.example.com/api/citizens"

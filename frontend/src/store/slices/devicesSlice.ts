@@ -3,7 +3,7 @@ import authApi from "../../api/authApi";
 
 interface Device {
   id: string;
-  device_id: string;
+  device_number: string;
   device_name?: string;
   user_email: string;
   is_trusted: boolean;
@@ -24,7 +24,7 @@ const initialState: DevicesState = {
 export const fetchDevices = createAsyncThunk(
   "devices/fetch",
   async () => {
-    const response = await authApi.get("/accounts/devices/");
+    const response = await authApi.get("/api/accounts/devices/");
     return response.data;
   }
 );
@@ -32,7 +32,7 @@ export const fetchDevices = createAsyncThunk(
 export const registerDevice = createAsyncThunk(
   "devices/register",
   async (payload: { device_id: string; device_name?: string; lat?: number; lon?: number }) => {
-    const response = await authApi.post("/accounts/devices/register/", payload);
+    const response = await authApi.post("/api/accounts/devices/register/", payload);
     return response.data;
   }
 );
@@ -40,7 +40,7 @@ export const registerDevice = createAsyncThunk(
 export const fetchPendingDeviceCount = createAsyncThunk(
   "devices/fetchPendingCount",
   async () => {
-    const res = await authApi.get("/accounts/devices/pending-count/");
+    const res = await authApi.get("/api/accounts/devices/pending-count/");
     return res.data.pending_count;
   }
 );

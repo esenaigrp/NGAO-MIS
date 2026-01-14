@@ -12,6 +12,9 @@ import DeathRegistrationList from "../features/civilRegistration/DeathRegistrati
 import MarriageRegistrationList from "../features/civilRegistration/MarriageRegistrationList";
 import LoginPage from "../features/auth/LoginPage";
 import { DeviceApprovalList } from "../features/users/DeviceApprovalList";
+import NationalIdRegistration from "../features/civilRegistration/NationalIdRegistration";
+import Messaging from "../features/dashboard/Messaging";
+import Projects from "../features/dashboard/Projects";
 
 const AppRoutes = () => (
   <Routes>
@@ -27,6 +30,9 @@ const AppRoutes = () => (
         <Route path="/dashboard/births" element={<BirthRegistrationList />} />
         <Route path="/dashboard/deaths" element={<DeathRegistrationList />} />
         <Route path="/dashboard/marriages" element={<MarriageRegistrationList />} />
+        <Route path="/dashboard/id-registration" element={<NationalIdRegistration />} />
+        <Route path="/dashboard/projects" element={<Projects />} />
+        <Route path="/dashboard/messaging" element={<Messaging />} />
         <Route path="/dashboard/devices" element={<DeviceApprovalList />} />
       </Route>
     </Route>

@@ -1,7 +1,11 @@
 import uuid
 from django.conf import settings
 from django.contrib.auth.models import (
-    AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+    Group,
+    Permission,
 )
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
@@ -9,6 +13,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from ngao_core.apps.geography.models import Area
 
 # -------------------------
 # Validators
@@ -18,43 +23,44 @@ PHONE_VALIDATOR = RegexValidator(
     message="Phone number must be in format '+254...' and contain 7-15 digits.",
 )
 
+
 # -------------------------
 # User Manager
 # -------------------------
 class CustomUserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def _create_user(self, email, password, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError("Email must be set")
-
+            raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
+        
+        # Get or create default role
+        default_role, _ = Role.objects.get_or_create(
+            name='User',
+            defaults={'description': 'Default user role', 'hierarchy_level': 0}
+        )
+        
+        # Set role if not provided
+        if 'role' not in extra_fields:
+            extra_fields['role'] = default_role
+            
         user = self.model(email=email, **extra_fields)
-
-        if password:
-            user.set_password(password)
-        else:
-            user.set_unusable_password()
-
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_active", True)
-        extra_fields.setdefault("is_staff", False)
-        extra_fields.setdefault("is_superuser", False)
-        return self._create_user(email, password, **extra_fields)
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        
+        # Get or create admin role for superuser
+        admin_role, _ = Role.objects.get_or_create(
+            name='Admin',
+            defaults={'description': 'Administrator role', 'hierarchy_level': 3}
+        )
+        extra_fields['role'] = admin_role
+        
+        return self.create_user(email, password, **extra_fields)
 
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-
-        if not extra_fields["is_staff"]:
-            raise ValueError("Superuser must have is_staff=True.")
-        if not extra_fields["is_superuser"]:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self._create_user(email, password, **extra_fields)
 
 # -------------------------
 # Role Model
@@ -75,7 +81,6 @@ class Role(models.Model):
 # Custom User Model
 # -------------------------
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=255)
     first_name = models.CharField(max_length=120)
@@ -83,21 +88,23 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+
 
     # Unique related_names to avoid clashes
     groups = models.ManyToManyField(
         Group,
-        verbose_name=_('groups'),
+        verbose_name=_("groups"),
         blank=True,
-        help_text=_('The groups this user belongs to.'),
+        help_text=_("The groups this user belongs to."),
         related_name="custom_user_groups",
         related_query_name="custom_user",
     )
     user_permissions = models.ManyToManyField(
         Permission,
-        verbose_name=_('user permissions'),
+        verbose_name=_("user permissions"),
         blank=True,
-        help_text=_('Specific permissions for this user.'),
+        help_text=_("Specific permissions for this user."),
         related_name="custom_user_permissions",
         related_query_name="custom_user_permission",
     )
@@ -117,9 +124,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-    @property
-    def id(self):
-        return self.id
 
 # -------------------------
 # Officer Profile
@@ -136,7 +140,9 @@ class OfficerProfile(models.Model):
     phone = models.CharField(max_length=20, validators=[PHONE_VALIDATOR], unique=True)
     otp_code = models.CharField(max_length=6)
     otp_created_at = models.DateTimeField(default=timezone.now)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, related_name="officers")
+    role = models.ForeignKey(
+        Role, on_delete=models.SET_NULL, null=True, related_name="officers"
+    )
     role_text = models.CharField(max_length=120)
     badge_number = models.CharField(max_length=50, unique=True)
     id_number = models.CharField(max_length=50, unique=True)
@@ -149,6 +155,7 @@ class OfficerProfile(models.Model):
         on_delete=models.SET_NULL,
         related_name="officers",
     )
+    area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.SET_NULL, related_name="areas" )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
     reset_otp = models.CharField(max_length=6, null=True, blank=True)
@@ -165,12 +172,17 @@ class OfficerProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.role_text}"
 
+
 # -------------------------
 # Contact Point
 # -------------------------
 class ContactPoint(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="contact_points")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="contact_points",
+    )
     type = models.CharField(
         max_length=20,
         choices=[("phone", "phone"), ("email", "email"), ("other", "other")],
@@ -183,10 +195,12 @@ class ContactPoint(models.Model):
     class Meta:
         unique_together = ("user", "type", "value")
 
+
 # -------------------------
 # OTP Model
 # -------------------------
 class OTP(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone = models.CharField(max_length=32, db_index=True)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -195,16 +209,16 @@ class OTP(models.Model):
     def __str__(self):
         return f"OTP for {self.phone}: {self.code}"
 
+
 # -------------------------
 # Device Registration Model
 # -------------------------
 class Device(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="devices"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="devices"
     )
-    device_id = models.CharField(max_length=255, unique=True)
+    device_number = models.CharField(max_length=255, unique=True)
     device_name = models.CharField(max_length=100, blank=True)
     is_trusted = models.BooleanField(default=False)
     last_ip = models.GenericIPAddressField(blank=True, null=True)
@@ -214,7 +228,7 @@ class Device(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='approved_devices'
+        related_name="approved_devices",
     )
     approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -223,26 +237,32 @@ class Device(models.Model):
     allowed_radius_meters = models.FloatField(default=100)
 
     def __str__(self):
-        return f"{self.device_name or self.device_id} ({'Trusted' if self.is_trusted else 'Pending'})"
+        return f"{self.device_name or self.device_number} ({'Trusted' if self.is_trusted else 'Pending'})"
+
 
 class DeviceApprovalRequest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pending"), ("approved", "Approved"), ("denied", "Denied")],
-        default="pending"
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("denied", "Denied"),
+        ],
+        default="pending",
     )
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='device_requests'
+        related_name="device_requests",
     )
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='device_approvals'
+        related_name="device_approvals",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)

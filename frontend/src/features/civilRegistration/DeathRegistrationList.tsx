@@ -5,7 +5,7 @@ import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
 import { fetchCitizens } from "../../store/slices/citizenSlice";
 import CompactAreaSelector from "../../components/CompactAreaSelector";
 import { Area } from "../../store/slices/areasSlice";
-import CitizenAutocomplete from "./CitizenAutoComplete";
+import CitizenAutocomplete, { ManualCitizenData } from "./CitizenAutoComplete";
 
 interface DeathRecordForm {
   citizen: string;
@@ -14,13 +14,13 @@ interface DeathRecordForm {
   place_of_death: string;
   cause_of_death: string;
   initiated_by: string;
-  reference_number: string;
   status: "submitted" | "approved" | "rejected";
   approved_at?: string;
   area?: string;
   age?: string;
   comments?: string;
   gender?: string;
+  citizen_manual?: ManualCitizenData | null,
 }
 
 const DeathRegistrationList: React.FC = () => {
@@ -34,10 +34,9 @@ const DeathRegistrationList: React.FC = () => {
     place_of_death: "",
     cause_of_death: "",
     initiated_by: "",
-    reference_number: "",
     status: "submitted",
-    approved_at: "",
     citizen_display: "",
+    citizen_manual: null,
     age: "",
     comments: "",
     gender: ""
@@ -69,14 +68,14 @@ const DeathRegistrationList: React.FC = () => {
           place_of_death: "",
           cause_of_death: "",
           initiated_by: "",
-          reference_number: "",
           status: "submitted",
           approved_at: "",
           citizen_display: "",
           area: "",
           age: "",
           comments: "",
-          gender: ""
+          gender: "",
+          citizen_manual: null
         });
         setCitizenSearch("");
       })
@@ -116,7 +115,7 @@ const DeathRegistrationList: React.FC = () => {
     let filtered = death.filter((d) => {
       const searchLower = searchTerm.toLowerCase();
       return (
-        d.citizen.toLowerCase().includes(searchLower) ||
+        d.citizen?.first_name?.toLowerCase().includes(searchLower) ||
         d.place_of_death.toLowerCase().includes(searchLower) ||
         d.date_of_death.toLowerCase().includes(searchLower) ||
         d.gender.toLowerCase().includes(searchLower)
@@ -176,6 +175,26 @@ const DeathRegistrationList: React.FC = () => {
       <FaChevronDown className="ml-1 inline h-4 w-4" />;
   };
 
+    // Handle father selection/manual entry
+    const handleDeceasedSelect = (id: string, display: string) => {
+      setNewDeath({
+        ...newDeath,
+        citizen: id,
+        citizen_display: display,
+        citizen_manual: null
+      });
+    };
+  
+    const handleDeceasedManual = (manualData: ManualCitizenData) => {
+      setNewDeath({
+        ...newDeath,
+        citizen_manual: manualData,
+        citizen: '',
+        citizen_display: ''
+      });
+    };
+  
+
   if (loading) return <p>Loading Death Registrations...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
@@ -195,10 +214,11 @@ const DeathRegistrationList: React.FC = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <CitizenAutocomplete
-              label="Deceased"
-              placeholder="Search by name or ID number"
+              label="Father (optional)"
+              placeholder="Search father by name or ID number"
               value={newDeath.citizen_display}
-              onSelect={(id, display) => setNewDeath({ ...newDeath, citizen: id, citizen_display: display })}
+              onSelect={handleDeceasedSelect}
+              onManualEntry={handleDeceasedManual}
               required
             />
           </div>

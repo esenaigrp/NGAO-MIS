@@ -12,11 +12,6 @@ export interface Citizen {
   id_number?: string;
   gender?: string;
   date_of_birth?: string;
-  sub_county?: string;
-  division?: string;
-  location?: string;
-  sublocation?: string;
-  village?: string;
   phone_number?: string;
   email?: string;
   area?: string;

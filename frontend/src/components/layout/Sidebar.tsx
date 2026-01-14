@@ -15,6 +15,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Deaths", path: "/dashboard/deaths", roles: ["Admin", "Officer"] },
   { label: "Marriages", path: "/dashboard/marriages", roles: ["Admin", "Officer"] },
   { label: "ID Registration", path: "dashboard/id-registration", roles: ["Admin", "Officer"]},
+  { label: "Projects", path: "dashboard/projects", roles: ["Admin", "Officer"]},
+  { label: "Messages", path: "dashboard/messaging", roles: ["Admin", "Officer"]},
   { label: "Device Approvals", path: "/dashboard/devices", roles: ["Admin", "Officer"] },
 ];
 

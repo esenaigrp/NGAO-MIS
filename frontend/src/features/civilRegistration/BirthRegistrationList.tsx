@@ -15,21 +15,31 @@ import {
 import { FaChevronDown, FaChevronUp, FaSearch } from "react-icons/fa";
 import CompactAreaSelector from "../../components/CompactAreaSelector";
 import { Area } from "../../store/slices/areasSlice";
-import CitizenAutocomplete from "./CitizenAutoComplete";
+import CitizenAutocomplete, { ManualCitizenData } from "./CitizenAutoComplete";
 
 const BirthRegistrationList: React.FC = () => {
   const dispatch = useAppDispatch();
   const { birth, loading, error, currentItem } = useAppSelector((state) => state.civil);
 
   const [form, setForm] = useState({
-    child_id: "",
-    child_display: "",
-    mother_id: "",
-    mother_display: "",
-    father_id: "",
-    father_display: "",
-    place_of_birth: "",
-    date_of_birth: ""
+    // Child
+    child_id: '',
+    child_manual: null as ManualCitizenData | null,
+    child_display: '',
+
+    // Mother
+    mother_id: '',
+    mother_manual: null as ManualCitizenData | null,
+    mother_display: '',
+
+    // Father (optional)
+    father_id: '',
+    father_manual: null as ManualCitizenData | null,
+    father_display: '',
+
+    place_of_birth: '',
+    date_of_birth: '',
+    gender: ''
   });
 
   const [editingBirthRecord, setEditingBirthRecord] = useState<any | null>(null);
@@ -39,9 +49,9 @@ const BirthRegistrationList: React.FC = () => {
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: string }>({ 
-    key: null, 
-    direction: 'asc' 
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: string }>({
+    key: null,
+    direction: 'asc'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -50,31 +60,131 @@ const BirthRegistrationList: React.FC = () => {
     dispatch(fetchBirthRegistrations());
   }, [dispatch]);
 
-  // Create draft - now using IDs
+
+  // Handle child selection/manual entry
+  const handleChildSelect = (id: string, display: string) => {
+    setForm({
+      ...form,
+      child_id: id,
+      child_display: display,
+      child_manual: null // Clear manual entry when ID is selected
+    });
+  };
+
+  const handleChildManual = (manualData: ManualCitizenData) => {
+    setForm({
+      ...form,
+      child_manual: manualData,
+      child_id: '', // Clear ID when manual entry is used
+      child_display: ''
+    });
+  };
+
+  // Handle mother selection/manual entry
+  const handleMotherSelect = (id: string, display: string) => {
+    setForm({
+      ...form,
+      mother_id: id,
+      mother_display: display,
+      mother_manual: null
+    });
+  };
+
+  const handleMotherManual = (manualData: ManualCitizenData) => {
+    setForm({
+      ...form,
+      mother_manual: manualData,
+      mother_id: '',
+      mother_display: ''
+    });
+  };
+
+  // Handle father selection/manual entry
+  const handleFatherSelect = (id: string, display: string) => {
+    setForm({
+      ...form,
+      father_id: id,
+      father_display: display,
+      father_manual: null
+    });
+  };
+
+  const handleFatherManual = (manualData: ManualCitizenData) => {
+    setForm({
+      ...form,
+      father_manual: manualData,
+      father_id: '',
+      father_display: ''
+    });
+  };
+
   const handleCreate = () => {
-    const payload = {
-      child: form.child_id,
-      mother: form.mother_id,
-      father: form.father_id || null, // optional
+    const payload: any = {
       place_of_birth: form.place_of_birth,
       date_of_birth: form.date_of_birth,
       area: selectedAreaId
     };
-    
-    dispatch(createBirth(payload));
-    
-    // Reset form
-    setForm({
-      child_id: "",
-      child_display: "",
-      mother_id: "",
-      mother_display: "",
-      father_id: "",
-      father_display: "",
-      place_of_birth: "",
-      date_of_birth: ""
-    });
-    setSelectedAreaId(null);
+
+    // Add child data
+    if (form.child_id) {
+      payload.child = form.child_id;
+    } else if (form.child_manual) {
+      payload.child_manual = form.child_manual;
+    }
+
+    // Add mother data
+    if (form.mother_id) {
+      payload.mother = form.mother_id;
+    } else if (form.mother_manual) {
+      payload.mother_manual = form.mother_manual;
+    }
+
+    // Add father data (optional)
+    if (form.father_id) {
+      payload.father = form.father_id;
+    } else if (form.father_manual) {
+      payload.father_manual = form.father_manual;
+    }
+
+    dispatch(createBirth(payload))
+      .unwrap()
+      .then(() => {
+        setForm({
+          child_id: '',
+          child_manual: null,
+          child_display: '',
+          mother_id: '',
+          mother_manual: null,
+          mother_display: '',
+          father_id: '',
+          father_manual: null,
+          father_display: '',
+          place_of_birth: '',
+          date_of_birth: '',
+          gender: ''
+        });
+        setSelectedAreaId(null);
+      })
+      .catch((error) => {
+        console.error("Birth creation failed:", error);
+      });
+  };
+
+  // Validation: Check if required fields are filled
+  const isFormValid = () => {
+    // Check child (either ID or complete manual entry)
+    const hasChild = form.child_id ||
+      (form.child_manual?.first_name &&
+        form.child_manual?.last_name &&
+        form.child_manual?.gender);
+
+    // Check mother (either ID or complete manual entry)
+    const hasMother = form.mother_id ||
+      (form.mother_manual?.first_name &&
+        form.mother_manual?.last_name &&
+        form.mother_manual?.gender);
+
+    return !!(hasChild && hasMother && form.place_of_birth && form.date_of_birth);
   };
 
   const handleUpdate = () => {
@@ -141,8 +251,8 @@ const BirthRegistrationList: React.FC = () => {
       const searchLower = searchTerm.toLowerCase();
       return (
         b.child_name?.toLowerCase().includes(searchLower) ||
-        b.mother?.toLowerCase().includes(searchLower) ||
-        b.father?.toLowerCase().includes(searchLower) ||
+        b?.mother?.first_name?.toLowerCase().includes(searchLower) ||
+        b.father?.first_name?.toLowerCase().includes(searchLower) ||
         b.place_of_birth?.toLowerCase().includes(searchLower) ||
         b.date_of_birth?.toLowerCase().includes(searchLower) ||
         b.reference_number?.toLowerCase().includes(searchLower)
@@ -195,6 +305,7 @@ const BirthRegistrationList: React.FC = () => {
       </div>
 
       {/* Register Birth Form */}
+
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-medium text-gray-900">Register Birth</h2>
 
@@ -203,7 +314,8 @@ const BirthRegistrationList: React.FC = () => {
             label="Child"
             placeholder="Search child by name or ID number"
             value={form.child_display}
-            onSelect={(id, display) => setForm({ ...form, child_id: id, child_display: display })}
+            onSelect={handleChildSelect}
+            onManualEntry={handleChildManual}
             required
           />
 
@@ -211,7 +323,8 @@ const BirthRegistrationList: React.FC = () => {
             label="Mother"
             placeholder="Search mother by name or ID number"
             value={form.mother_display}
-            onSelect={(id, display) => setForm({ ...form, mother_id: id, mother_display: display })}
+            onSelect={handleMotherSelect}
+            onManualEntry={handleMotherManual}
             required
           />
 
@@ -219,8 +332,25 @@ const BirthRegistrationList: React.FC = () => {
             label="Father (optional)"
             placeholder="Search father by name or ID number"
             value={form.father_display}
-            onSelect={(id, display) => setForm({ ...form, father_id: id, father_display: display })}
+            onSelect={handleFatherSelect}
+            onManualEntry={handleFatherManual}
           />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Gender
+            </label>
+            <select
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select gender</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -248,14 +378,14 @@ const BirthRegistrationList: React.FC = () => {
         </div>
 
         <CompactAreaSelector
-          onSelectionChange={handleAreaSelectionChange}
+          onSelectionChange={(areaId: string) => setSelectedAreaId(areaId)}
           className="max-w-1xl mt-4"
         />
 
         <div className="mt-4">
           <button
             onClick={handleCreate}
-            disabled={!form.child_id || !form.mother_id || !form.place_of_birth || !form.date_of_birth}
+            disabled={!isFormValid()}
             className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Save Draft
@@ -328,8 +458,8 @@ const BirthRegistrationList: React.FC = () => {
                   >
                     Place of Birth <SortIcon columnKey="place_of_birth" />
                   </th>
-                  <th className="px-4 py-3 font-medium text-gray-700">Mother Verified</th>
-                  <th className="px-4 py-3 font-medium text-gray-700">Father Verified</th>
+                  <th className="px-4 py-3 font-medium text-gray-700">Mother</th>
+                  <th className="px-4 py-3 font-medium text-gray-700">Father</th>
                   <th
                     onClick={() => handleSort('status')}
                     className="cursor-pointer px-4 py-3 font-medium text-gray-700 hover:bg-gray-100"
@@ -344,45 +474,28 @@ const BirthRegistrationList: React.FC = () => {
                   paginatedData.map((b) => (
                     <tr key={b.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">{b.reference_number}</td>
-                      <td className="px-4 py-3">{b.child_name}</td>
+                      <td className="px-4 py-3">{b?.child?.first_name} {b?.child?.last_name}</td>
                       <td className="px-4 py-3">{b.date_of_birth}</td>
                       <td className="px-4 py-3">{b.place_of_birth}</td>
+                      <td className="px-4 py-3">{b?.mother?.first_name} {b?.mother?.last_name}</td>
+                      <td className="px-4 py-3">{b?.father?.first_name} {b?.father?.last_name}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          b.mother_verified 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {b.mother_verified ? "Yes" : "No"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          b.father_verified 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {b.father_verified ? "Yes" : "No"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          b.status === 'draft' 
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : b.status === 'approved'
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${b.status === 'draft'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : b.status === 'approved'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-blue-100 text-blue-800'
-                        }`}>
+                          }`}>
                           {b.status}
                         </span>
                       </td>
                       <td className="px-4 py-3 space-x-2">
-                        <button
+                        {/* <button
                           onClick={() => handleSelect(b)}
                           className="px-3 py-1 text-sm text-indigo-700 bg-indigo-100 rounded hover:bg-indigo-200"
                         >
                           Verify Parents
-                        </button>
+                        </button> */}
 
                         <button
                           onClick={() => setEditingBirthRecord(b)}

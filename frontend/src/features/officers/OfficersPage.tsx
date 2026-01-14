@@ -450,12 +450,12 @@ const OfficersPage: React.FC = () => {
                 Submit
               </button>
 
-              {Object.keys(errors).length > 0 &&
+              {/* {Object.keys(errors).length > 0 &&
                 Object.values(touched).some((v) => v) && (
                   <p className="text-sm text-red-600">
                     Please fix the errors above before submitting
                   </p>
-                )}
+                )} */}
             </div>
           </div>
         </div>
